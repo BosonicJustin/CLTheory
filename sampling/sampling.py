@@ -1,7 +1,47 @@
 import torch
 import torch.nn.functional as F
 
-import vMF
+def sample_vMF_sequential(mu, kappa):
+    """Generate num_samples N-dimensional samples from von Mises Fisher
+    distribution around center mu \in R^N with concentration kappa.
+    """
+
+    assert mu.dim() == 1 and len(mu) >= 2
+    n_features = len(mu)
+    w = _sample_weight_sequential(kappa, n_features)
+    # sample a point v on the unit sphere that's orthogonal to mu
+    v = _sample_orthonormal_to_sequential(mu)
+    # compute new point
+    sample = v * torch.sqrt(1.0 - w ** 2) + w * mu
+
+    return sample
+
+
+def _sample_weight_sequential(kappa, dim):
+    """Rejection sampling scheme for sampling distance from center on
+    surface of the sphere.
+    """
+    dim = dim - 1  # since S^{n-1}
+    b = dim / (torch.sqrt(4.0 * kappa ** 2 + dim ** 2) + 2 * kappa)
+    x = (1.0 - b) / (1.0 + b)
+    c = kappa * x + dim * torch.log(1 - x ** 2)
+
+    while True:
+        z = torch.distributions.beta.Beta(dim / 2.0, dim / 2.0).sample()
+        # z = torch.random.beta(dim / 2.0, dim / 2.0)
+        w = (1.0 - (1.0 + b) * z) / (1.0 - (1.0 - b) * z)
+        u = torch.rand(1)
+        if kappa * w + dim * torch.log(1.0 - x * w) - c >= torch.log(u):
+            return w
+
+
+def _sample_orthonormal_to_sequential(mu):
+    """Sample point on sphere orthogonal to mu."""
+    v = torch.randn(len(mu), device=mu.device)
+    proj_mu_v = mu * torch.dot(mu, v) / torch.norm(mu)
+    orthto = v - proj_mu_v
+    return orthto / torch.norm(orthto)
+
 
 def sample_on_sphere_uniform(num_samples, dimension, radius=1):
     assert radius > 0, "Radius must be greater than 0"
@@ -16,7 +56,7 @@ def sample_on_sphere_uniform(num_samples, dimension, radius=1):
 def sample_conditional(z, kappa, d_fixed):
     assert z.dim() == 2, "Element must be provided in a (batch, latent_dim) form"
     assert z.size(1) >= 2, "Latent dimension must be at least 2"
-    assert d_fixed > 0, "Fixed dimensions must be greater than 0"
+    assert d_fixed >= 0, "Fixed dimension must be at least 0"
     assert kappa > 0, "Kappa must be greater than 0"
     assert z.size(1) > d_fixed, "Latent vector must have at least one variable dimension"
 
@@ -34,7 +74,7 @@ def sample_conditional(z, kappa, d_fixed):
     batch_size = z.size(0)
 
     # Q: Why is kappa adjusted here?
-    s = [vMF.sample_vMF_sequential(v_normed[b], kappa * v_norm[b] ** 2) for b in range(batch_size)]
+    s = [sample_vMF_sequential(v_normed[b], kappa * v_norm[b] ** 2) for b in range(batch_size)]
     s = torch.stack(s, 0)
 
     return torch.cat((u, s * v_norm), 1)
