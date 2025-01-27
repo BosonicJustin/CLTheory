@@ -9,7 +9,7 @@ class SphereEncoder(nn.Module):
             nn.Linear(input_dim, 256),  # First layer
             nn.ReLU(),                 # Non-linear activation
             nn.Linear(256, 128),       # Second layer
-            nn.ReLU(),
+            nn.Sigmoid(),
             nn.Linear(128, latent_dim) # Final layer to map to latent_dim
         )
 
