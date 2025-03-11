@@ -1,31 +1,21 @@
 import torch
 
-
 class SimCLRLoss(torch.nn.Module):
     def __init__(self, temperature):
         super(SimCLRLoss, self).__init__()
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='mean')
         self.temperature = temperature
 
-    # Here I'm expecting an input of shape (2n, d_latent)
-    def forward(self, z):
-        s_matrix = z @ z.t()  / self.temperature
-        batch_size = z.size(0)
+    def forward(self, z_recovered, z_sim_recovered, z_neg_recovered):
+        # Compute the dot products between each z and each "negative" sample
+        neg = torch.einsum("ij,kj -> ik", z_recovered, z_neg_recovered)
 
-        # print(s_matrix.shape)
+        # Compute the dot product between each z and recovered (positive sample)
+        pos = torch.einsum("ij,ij -> i", z_recovered, z_sim_recovered)
 
-        # Here we will be summing over the horizontal direction of the matrix (in the exp), hence masking the diagonal
-        mask = torch.eye(batch_size, dtype=torch.bool, device=z.device)
-        s_matrix = s_matrix.masked_fill(mask, -1e11)
+        neg_and_pos = torch.cat((neg, pos.unsqueeze(1)), dim=1)
 
-        # Here the logic is that we stacked the original and augmented pairs
-        # So pair i (from the first half) will be similar to the pair N/2 + i from the second half
-        labels = torch.arange(batch_size, device=z.device)
-        labels[:batch_size // 2] += batch_size // 2 # For all elements in the first half - add N
-        labels[batch_size // 2:] -= batch_size // 2 # For all elements in the second half - subtract N
+        loss_pos = -pos / self.temperature
+        loss_neg = torch.logsumexp(neg_and_pos / self.temperature, dim=1)
 
-        # print('labels', labels)
-        # print('look', s_matrix[0])
-        # print('S_MATRIX SHAPE', s_matrix)
+        return (loss_pos + loss_neg).mean()
 
-        return self.criterion(s_matrix, labels)
