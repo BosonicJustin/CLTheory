@@ -22,3 +22,22 @@ class SphereDecoderIdentity(nn.Module):
 class RotationDecoder(nn.Module):
     def __init__(self, latent_dim, output_dim):
         super(RotationDecoder, self).__init__()
+
+
+class InjectiveLinearDecoder(nn.Module):
+    def __init__(self, latent_dim, output_dim):
+        super(InjectiveLinearDecoder, self).__init__()
+
+        assert latent_dim >= output_dim
+
+        self.decoder = nn.Linear(latent_dim, output_dim)
+
+        matrix = torch.diag(torch.rand(latent_dim))
+
+        if latent_dim < output_dim:
+            lower_matrix = torch.randn((output_dim - latent_dim, latent_dim))
+            matrix = torch.vstack([matrix, lower_matrix])
+
+        assert matrix.shape == (output_dim, latent_dim)
+
+        self.decoder.weight.copy_(matrix)

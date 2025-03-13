@@ -98,3 +98,15 @@ class NSphereSpace(Space):
         samples = torch.Tensor(samples_np).to(device)
 
         return samples
+
+    def sample_pair_vmf(self, num_samples,  kappa, device="cpu"):
+        z = self.uniform(num_samples)
+        z_aug = self.von_mises_fisher(z, kappa, num_samples)
+
+        return z, z_aug
+
+    def sample_pair_normal(self, num_samples, concentration, device="cpu"):
+        z = self.uniform(num_samples)
+        z_aug = self.normal(z, concentration, num_samples)
+
+        return z, z_aug
