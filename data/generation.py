@@ -28,7 +28,7 @@ class InjectiveLinearDecoder(nn.Module):
     def __init__(self, latent_dim, output_dim):
         super(InjectiveLinearDecoder, self).__init__()
 
-        assert latent_dim >= output_dim
+        assert latent_dim <= output_dim
 
         self.decoder = nn.Linear(latent_dim, output_dim)
 
@@ -40,4 +40,8 @@ class InjectiveLinearDecoder(nn.Module):
 
         assert matrix.shape == (output_dim, latent_dim)
 
-        self.decoder.weight.copy_(matrix)
+        with torch.no_grad():
+            self.decoder.weight.copy_(matrix)
+
+    def forward(self, z):
+        return self.decoder(z)

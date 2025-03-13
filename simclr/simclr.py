@@ -44,7 +44,7 @@ class SimCLR(torch.nn.Module):
         for p in self.decoder.parameters():
             p.requires_grad = False
 
-        adam_normal = torch.optim.Adam(self.encoder.parameters(), lr=1e-4)
+        adam = torch.optim.Adam(self.encoder.parameters(), lr=1e-4)
         self.encoder.train()
 
         h = lambda latent : self.encoder(self.decoder(latent))
@@ -57,7 +57,7 @@ class SimCLR(torch.nn.Module):
             z_enc_sim = h(z_sim)
             z_enc_neg = h(z_neg)
 
-            loss_result = self.training_step(z_enc, z_enc_sim, z_enc_neg, adam_normal)
+            loss_result = self.training_step(z_enc, z_enc_sim, z_enc_neg, adam)
 
             if i % 250 == 1:
                 print('Loss:', loss_result, 'Samples processed:', i)

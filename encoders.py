@@ -150,3 +150,19 @@ def get_flow(
 
     nodes.append(Ff.OutputNode(nodes[-1], name="output"))
     return Ff.ReversibleGraphNet(nodes, verbose=False)
+
+
+def construct_mlp_encoder(latent_dim, data_dim, device="cpu"):
+    return get_mlp(
+        n_in=latent_dim,
+        n_out=data_dim,
+        layers=[
+            latent_dim * 10,
+            latent_dim * 50,
+            latent_dim * 50,
+            latent_dim * 50,
+            latent_dim * 50,
+            latent_dim * 10,
+        ],
+        output_normalization="fixed_sphere",
+    ).to(device)
