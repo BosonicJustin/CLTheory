@@ -1,5 +1,7 @@
 import torch
 
+from evals.disentanglement import linear_disentanglement, permutation_disentanglement
+
 class InfoNceLoss(torch.nn.Module):
     def __init__(self, temperature):
         super(InfoNceLoss, self).__init__()
@@ -49,9 +51,18 @@ class SimCLR(torch.nn.Module):
 
         h = lambda latent : self.encoder(self.decoder(latent))
 
+        control_latent = self.sample_uniform(batch_size)
+        linear = linear_disentanglement(control_latent, control_latent)
+
+        print("Linear control score:", linear[0][0])
+
+        perm = permutation_disentanglement(control_latent, control_latent)
+
+        print("Permutation control score:", perm[0][0])
+
         for i in range(iterations):
             z, z_sim = self.sample_pair(batch_size)
-            z_neg =  self.sample_uniform(batch_size)
+            z_neg = self.sample_uniform(batch_size)
 
             z_enc = h(z)
             z_enc_sim = h(z_sim)
@@ -60,7 +71,13 @@ class SimCLR(torch.nn.Module):
             loss_result = self.training_step(z_enc, z_enc_sim, z_enc_neg, adam)
 
             if i % 250 == 1:
-                print('Loss:', loss_result, 'Samples processed:', i)
+                lin_dis, _ = linear_disentanglement(z, z_enc)
+                lin_score, _ = lin_dis
+
+                perm_dis, _ = permutation_disentanglement(z, z_enc)
+                perm_score, _ = perm_dis
+
+                print('Loss:', loss_result, 'Samples processed:', i, "linear disentanglement:", lin_score, 'permutation disentanglement:', perm_score)
 
         self.encoder.eval()
 
