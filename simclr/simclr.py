@@ -1,4 +1,8 @@
 import torch
+import kornia.augmentation as K
+from tqdm import tqdm
+from torch import nn
+import os
 
 from evals.disentanglement import linear_disentanglement, permutation_disentanglement
 
@@ -82,3 +86,108 @@ class SimCLR(torch.nn.Module):
         self.encoder.eval()
 
         return self.encoder
+
+class SimCLRImages(nn.Module):
+    def __init__(self, encoder, training_dataset, image_h, image_w,
+                 isomorphism=None, epochs=10, temperature=0.5,
+                 checkpoint_dir='checkpoints', resume_from=None, save_every=5):
+        super().__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.encoder = encoder.to(self.device)
+        self.training_dataset = training_dataset
+        self.isomorphism = isomorphism if isomorphism is not None else nn.Identity()
+        self.loss_fn = torch.nn.functional.cross_entropy
+        self.normalize = lambda z: torch.nn.functional.normalize(z, p=2.0, dim=-1, eps=1e-12)
+        self.optimizer = torch.optim.Adam(self.encoder.parameters(), lr=1e-4)
+        self.T1 = K.RandomRotation(degrees=30, p=1.0).to(self.device)
+        self.T2 = K.RandomResizedCrop((image_h, image_w), scale=(0.2, 0.8), p=1.0).to(self.device)
+        self.epochs = epochs
+        self.temperature = temperature
+        self.checkpoint_dir = checkpoint_dir
+        self.resume_from = resume_from
+        self.save_every = save_every
+
+        self.start_epoch = 0
+        self.losses = []
+        self.epoch_losses = []
+
+        print(f"Using device: {self.device}")
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+
+        if self.resume_from:
+            self._load_checkpoint(self.resume_from)
+
+    def _save_checkpoint(self, epoch):
+        checkpoint_path = os.path.join(self.checkpoint_dir, f"encoder_epoch_{epoch}.pt")
+        torch.save({
+            'epoch': epoch,
+            'encoder_state': self.encoder.state_dict(),
+            'optimizer_state': self.optimizer.state_dict(),
+            'losses': self.losses,
+            'epoch_losses': self.epoch_losses
+        }, checkpoint_path)
+        print(f"Checkpoint saved at {checkpoint_path}")
+
+    def _load_checkpoint(self, path):
+        print(f"Loading checkpoint from {path}")
+        checkpoint = torch.load(path, map_location=self.device)
+        self.encoder.load_state_dict(checkpoint['encoder_state'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state'])
+        self.start_epoch = checkpoint['epoch'] + 1
+        self.losses = checkpoint.get('losses', [])
+        self.epoch_losses = checkpoint.get('epoch_losses', [])
+
+    def loss(self, embeddings):
+        N = embeddings.shape[0] // 2
+        z_norm = self.normalize(embeddings)
+        sim_matrix = z_norm @ z_norm.T / self.temperature
+
+        mask = torch.eye(embeddings.shape[0], device=embeddings.device).bool()
+        sim_matrix.masked_fill_(mask, -10e15)
+
+        gt = torch.cat((torch.arange(N, embeddings.shape[0]), torch.arange(0, N)), dim=0).to(embeddings.device)
+
+        return self.loss_fn(sim_matrix, gt)
+
+    def training_step(self, batch):
+        self.optimizer.zero_grad()
+        x = self.T1(batch)
+        x_sim = self.T2(batch)
+        x_all = torch.cat((x, x_sim), dim=0)
+        z_all = self.encoder(x_all)
+        l = self.loss(z_all)
+        l.backward()
+        self.optimizer.step()
+
+        return l.item()
+
+    def train(self):
+        self.encoder.train()
+        print("Starting training")
+
+        global_step = 0
+        for epoch in range(self.start_epoch, self.epochs):
+            epoch_loss = 0.0
+            batch_count = 0
+
+            pbar = tqdm(self.training_dataset, desc=f"Epoch {epoch + 1}/{self.epochs}")
+            for batch in pbar:
+                images, _ = batch
+                images = images.to(self.device)
+                loss = self.training_step(self.isomorphism(images))
+                self.losses.append(loss)
+                epoch_loss += loss
+                batch_count += 1
+                global_step += 1
+                pbar.set_postfix({'loss': f"{loss:.4f}"})
+
+            avg_epoch_loss = epoch_loss / batch_count
+            self.epoch_losses.append(avg_epoch_loss)
+            print(f"Epoch {epoch + 1}/{self.epochs}, Average Loss: {avg_epoch_loss:.4f}")
+
+            # If it's time to save or if the epoch is the last one - save the model
+            if (epoch + 1) % self.save_every == 0 or (epoch + 1) == self.epochs:
+                self._save_checkpoint(epoch + 1)
+
+        self.encoder.eval()
+        return self.encoder, {'batch_losses': self.losses, 'epoch_losses': self.epoch_losses}
