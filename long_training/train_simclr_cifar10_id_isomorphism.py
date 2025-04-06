@@ -24,7 +24,14 @@ train_loader = DataLoader(trainset, batch_size=120, shuffle=True, num_workers=2)
 
 resnet50 = models.resnet50(pretrained=False)
 
-#  (self, encoder, training_dataset, image_h, image_w,
-#                  isomorphism=None, epochs=10, temperature=0.5,
-#                  checkpoint_dir='checkpoints', resume_from=None, save_every=5):
-trained_resnet50_identity, losses = SimCLRImages(resnet50, train_loader, 224, 224, isomorphism=nn.Identity(), epochs=400, temperature=0.5, save_every=5).train()
+trained_resnet50_identity, losses = SimCLRImages(
+    resnet50,
+    train_loader,
+    224,
+    224,
+    isomorphism=nn.Identity(),
+    epochs=400,
+    temperature=0.5,
+    save_every=5,
+    checkpoint_dir='./checkpoints_isomorphic_training_id_cifar10',
+).train()
