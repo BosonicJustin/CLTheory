@@ -205,7 +205,7 @@ class SimCLRImages(nn.Module):
             if (epoch + 1) % self.save_every == 0 or (epoch + 1) == self.epochs:
                 self._save_checkpoint(epoch + 1)
 
-            if self.val_loader and (epoch + 1) % self.eval_every == 0:
+            if self.val_dataset and (epoch + 1) % self.eval_every == 0:
                 self.evaluate_knn(epoch)
 
         self.encoder.eval()
