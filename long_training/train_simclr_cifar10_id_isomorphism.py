@@ -16,7 +16,7 @@ transform = transforms.Compose([
 trainset = CIFAR10(root='./datasets', train=True, download=True, transform=transform)
 train_loader = DataLoader(trainset, batch_size=120, shuffle=True, num_workers=2)
 
-resnet50 = models.resnet50(pretrained=False)
+resnet50 = models.resnet50(weights=None)
 resnet50.fc = nn.Identity()
 
 trained_resnet50_identity, losses = SimCLRImages(
