@@ -174,7 +174,7 @@ class SimCLRImages(nn.Module):
     def evaluate_knn(self, epoch):
         self.encoder.eval()
 
-        acc = run_knn_eval(self.encoder, self.training_dataset, self.val_loader, self.device)
+        acc = run_knn_eval(self.encoder, self.training_dataset, self.val_dataset, self.device)
 
         print(f"🔍 [k-NN Eval] Epoch {epoch + 1}, Accuracy: {acc:.2f}%")
         self.encoder.train()
