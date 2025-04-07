@@ -1,7 +1,7 @@
-from torch import nn, DataLoader
+from torch.utils.data import DataLoader
 import torch
-import tqdm
-
+from torch import nn
+from tqdm import tqdm
 
 class LinearProbeEvaluator(nn.Module):
     def __init__(self, encoder, embedding_dim, num_classes, device=None):
@@ -21,7 +21,7 @@ class LinearProbeEvaluator(nn.Module):
         # Optimizer for training the linear encoder
         self.optimizer = torch.optim.Adam(self.classifier.parameters(), lr=1e-3)
 
-    def train_probe(self, train_loader: DataLoader, val_loader: DataLoader = None, epochs: int = 10):
+    def train(self, train_loader: DataLoader, val_loader: DataLoader = None, epochs: int = 10):
         self.classifier.train()
         print("Starting linear probe training...")
 
@@ -65,6 +65,8 @@ class LinearProbeEvaluator(nn.Module):
         self.classifier.eval()
         correct = 0
         total = 0
+
+        print('Starting the linear probe evaluation...')
 
         with torch.no_grad():
             for x, y in dataloader:
