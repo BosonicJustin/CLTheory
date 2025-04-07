@@ -28,9 +28,10 @@ trained_resnet50_identity, losses = SimCLRImages(
     224,
     224,
     isomorphism=nn.Identity(),
-    epochs=400,
+    epochs=100,
     temperature=0.5,
-    save_every=5,
+    save_every=10,
     checkpoint_dir='./checkpoints_isomorphic_training_id_cifar10',
-    val_dataset=test_loader
+    val_dataset=test_loader,
+    eval_every=10
 ).train()
