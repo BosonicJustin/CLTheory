@@ -1,14 +1,8 @@
-import torch
-from torchvision.datasets import CIFAR10
-from torchvision import transforms
-from torch.utils.data import DataLoader
-
-import matplotlib.pyplot as plt
-import numpy as np
-
 import torchvision.models as models
-
 from torch import nn
+from torch.utils.data import DataLoader
+from torchvision import transforms
+from torchvision.datasets import CIFAR10
 
 from simclr.simclr import SimCLRImages
 
@@ -23,6 +17,7 @@ trainset = CIFAR10(root='./datasets', train=True, download=True, transform=trans
 train_loader = DataLoader(trainset, batch_size=120, shuffle=True, num_workers=2)
 
 resnet50 = models.resnet50(pretrained=False)
+resnet50.fc = nn.Identity()
 
 trained_resnet50_identity, losses = SimCLRImages(
     resnet50,
