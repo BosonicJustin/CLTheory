@@ -16,6 +16,9 @@ transform = transforms.Compose([
 trainset = CIFAR10(root='./datasets', train=True, download=True, transform=transform)
 train_loader = DataLoader(trainset, batch_size=120, shuffle=True, num_workers=2)
 
+trainset_test = CIFAR10(root='./datasets', train=False, download=True, transform=transform)
+test_loader = DataLoader(trainset_test, batch_size=120, shuffle=True, num_workers=2)
+
 resnet50 = models.resnet50(weights=None)
 resnet50.fc = nn.Identity()
 
@@ -29,4 +32,5 @@ trained_resnet50_identity, losses = SimCLRImages(
     temperature=0.5,
     save_every=5,
     checkpoint_dir='./checkpoints_isomorphic_training_id_cifar10',
+    val_dataset=test_loader
 ).train()

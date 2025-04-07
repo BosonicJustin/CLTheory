@@ -19,7 +19,7 @@ class LinearProbeEvaluator(nn.Module):
         self.loss_fn = nn.CrossEntropyLoss()
 
         # Optimizer for training the linear encoder
-        self.optimizer = torch.optim.Adam(self.classifier.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(self.classifier.parameters(), lr=1e-2)
 
     def train(self, train_loader: DataLoader, val_loader: DataLoader = None, epochs: int = 10):
         self.classifier.train()
@@ -37,6 +37,7 @@ class LinearProbeEvaluator(nn.Module):
                 # Making sure no gradient is calculated here
                 with torch.no_grad():
                     z = self.encoder(x)
+                    z = nn.functional.normalize(z, dim=1)
 
                 # Get logits
                 preds = self.classifier(z)
