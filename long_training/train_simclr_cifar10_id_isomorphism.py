@@ -33,5 +33,5 @@ trained_resnet50_identity, losses = SimCLRImages(
     save_every=10,
     checkpoint_dir='./checkpoints_isomorphic_training_id_cifar10_sgd_run2',
     val_dataset=test_loader,
-    eval_every=1
+    eval_every=10
 ).train()
