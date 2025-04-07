@@ -105,7 +105,7 @@ class SimCLRImages(nn.Module):
         self.loss_fn = torch.nn.functional.cross_entropy
         self.normalize = lambda z: torch.nn.functional.normalize(z, p=2.0, dim=-1, eps=1e-12)
         self.optimizer = torch.optim.SGD(self.encoder.parameters(), lr=0.5, momentum=0.9, weight_decay=1e-4)
-        self.T1 = K.RandomRotation(degrees=30, p=1.0).to(self.device)
+        self.T1 = K.ColorJitter(brightness=0.8, contrast=0.8, saturation=0.8, hue=0.2, p=1).to(self.device) # TODO: the problem might be here - the
         self.T2 = K.RandomResizedCrop((image_h, image_w), scale=(0.2, 0.8), p=1.0).to(self.device)
         self.epochs = epochs
         self.temperature = temperature
