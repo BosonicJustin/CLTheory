@@ -7,6 +7,8 @@ from torchvision.datasets import CIFAR10
 import os
 import pickle
 
+from image_transforms.image_loader_transform import LoaderTransformImagePermutation
+
 from simclr.simclr import SimCLRImages
 from transformations.image_permutations import ImagePermutationTransform
 
@@ -29,24 +31,11 @@ with open('./saved_transforms/image_permutation.pkl', 'wb') as f:
     pickle.dump(perm_transform, f)
 print(f"Permutation transform saved to ./saved_transforms/image_permutation.pkl")
 
-
-# Custom transform that applies the permutation
-class PermutationTransform:
-    def __init__(self, perm_transform):
-        self.perm_transform = perm_transform
-
-    def __call__(self, img):
-        # Add batch dimension, apply permutation, remove batch dimension
-        img_batch = img.unsqueeze(0)
-        img_permuted = self.perm_transform(img_batch)
-        return img_permuted.squeeze(0)
-
-
 # Transformation pipeline with permutation included
 transform = transforms.Compose([
     transforms.Resize((224, 224)),  # ResNet50 expects 224x224 images
     transforms.ToTensor(),
-    PermutationTransform(perm_transform)  # Apply the permutation as part of the transform pipeline
+    LoaderTransformImagePermutation(perm_transform)  # Apply the permutation as part of the transform pipeline
 ])
 
 # Load CIFAR-10 dataset with permutation transform
