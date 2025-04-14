@@ -99,7 +99,7 @@ class NSphereSpace(Space):
 
         return samples
 
-    def sample_pair_vmf(self, num_samples,  kappa, device="cpu"):
+    def sample_pair_vmf(self, num_samples, kappasampl):
         z = self.uniform(num_samples)
         z_aug = self.von_mises_fisher(z, kappa, num_samples)
 
