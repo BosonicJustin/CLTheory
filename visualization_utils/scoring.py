@@ -1,4 +1,3 @@
-visualization_utils/scoring.py
 
 def plot_scores(plt, scores):
     linear_scores = scores['linear_scores']
