@@ -11,6 +11,6 @@ def perform_linear_experiment(data_dimension, iterations, batch, latent_dim, sam
 
     simclr = SimCLR(f, g, sample_pair_fixed, sample_uniform_fixed, tau, device)
 
-    f = simclr.train(batch, iterations)
+    f, scores = simclr.train(batch, iterations)
 
-    return lambda z: f(g(z))
+    return lambda z: f(g(z)), scores

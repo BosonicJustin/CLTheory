@@ -79,3 +79,4 @@ def scatter3d_sphere(plt, z, color, s=10, a=0.8, r=1.03):
     ax.view_init(10, 45)
 
     return fig
+

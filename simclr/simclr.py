@@ -46,7 +46,6 @@ class SimCLR(torch.nn.Module):
 
         return loss_result.item()
 
-
     def train(self, batch_size, iterations):
         # Freeze decoder
         for p in self.decoder.parameters():
@@ -67,6 +66,9 @@ class SimCLR(torch.nn.Module):
         perm = permutation_disentanglement(control_latent, control_latent)
         print("Permutation control score:", perm[0][0])
 
+        linear_scores = []
+        perm_scores = []
+
         for i in range(iterations):
             z, z_sim = self.sample_pair(batch_size)
             z_neg = self.sample_uniform(batch_size)
@@ -81,19 +83,22 @@ class SimCLR(torch.nn.Module):
 
             loss_result = self.training_step(z_enc, z_enc_sim, z_enc_neg, adam)
 
-            if i % 250 == 1:
+            if i % 20 == 1:
                 lin_dis, _ = linear_disentanglement(z.cpu(), z_enc.cpu())
                 lin_score, _ = lin_dis
 
                 perm_dis, _ = permutation_disentanglement(z.cpu(), z_enc.cpu())
                 perm_score, _ = perm_dis
 
+                linear_scores.append(lin_score)
+                perm_scores.append(perm_score)
+
                 print('Loss:', loss_result, 'Samples processed:', i,
                       "linear disentanglement:", lin_score,
                       'permutation disentanglement:', perm_score)
 
         self.encoder.eval()
-        return self.encoder
+        return self.encoder, {'linear_scores': linear_scores, 'perm_scores': perm_scores}
 
 class SimCLRImages(nn.Module):
     def __init__(self, encoder, training_dataset, image_h, image_w,
