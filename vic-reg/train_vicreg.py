@@ -8,7 +8,7 @@ from vic_reg import VicReg
 from models import create_vicreg_components
 
 
-def get_cifar10_dataloaders(batch_size=256, num_workers=2):
+def get_cifar10_dataloaders(batch_size=10, num_workers=2):
     """
     Create train and test dataloaders for CIFAR10.
     """
@@ -61,11 +61,16 @@ def main():
     vicreg = VicReg(
         model=encoder,
         expander=expander,
+        gamma=1.0,
+        eps=1e-6,
+        lambda_c=25,
+        mu_c=25,
+        nu_c=1
     )
     
     # Training parameters
     epochs = 100
-    lr = 0.5
+    lr = 0.1  # Reduced learning rate
     momentum = 0.9
     weight_decay = 1e-4
     save_every = 10

@@ -26,10 +26,13 @@ class Expander(nn.Module):
         
         self.expander = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True),
             nn.Linear(hidden_dim, output_dim),
+            nn.BatchNorm1d(output_dim),
         )
         
     def forward(self, x):

@@ -53,9 +53,8 @@ class VicRegLoss(torch.nn.Module):
         self.mu_c = mu_c
         self.nu_c = nu_c
 
-
     def forward(self, latents, similar_latents):
-        l1 = self.mu_c * (self.variance_loss(latents) + self.covariance_loss(similar_latents))
+        l1 = self.mu_c * (self.variance_loss(latents) + self.variance_loss(similar_latents))
         l2 = self.nu_c * (self.covariance_loss(latents) + self.covariance_loss(similar_latents))
         l3 = self.lambda_c * self.alignment_loss(latents, similar_latents)
 

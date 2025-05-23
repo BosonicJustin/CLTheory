@@ -39,7 +39,7 @@ class VicReg(torch.nn.Module):
         ).to(self.device)
         
     def train(self, train_loader, val_loader=None, epochs=100, lr=0.5, momentum=0.9, weight_decay=1e-4,
-              save_every=10, eval_every=10, checkpoint_dir='checkpoints', resume_from=None):
+              save_every=10, eval_every=10, checkpoint_dir='checkpoints', resume_from=None, max_grad_norm=1.0):
         """
         Train the VicReg model.
         
@@ -54,6 +54,7 @@ class VicReg(torch.nn.Module):
             eval_every: Evaluate on validation set every N epochs
             checkpoint_dir: Directory to save checkpoints
             resume_from: Path to checkpoint to resume from
+            max_grad_norm: Maximum gradient norm for clipping
         """
         self.model.train()
         self.expander.train()
@@ -64,7 +65,18 @@ class VicReg(torch.nn.Module):
             momentum=momentum,
             weight_decay=weight_decay
         )
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+        
+        # Add warmup period
+        warmup_epochs = 5
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=lr,
+            epochs=epochs,
+            steps_per_epoch=len(train_loader),
+            pct_start=warmup_epochs/epochs,
+            div_factor=25,
+            final_div_factor=1e4
+        )
         
         start_epoch = 0
         losses = []
@@ -111,6 +123,7 @@ class VicReg(torch.nn.Module):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
                 
                 # Record loss
                 loss_value = loss.item()
@@ -118,12 +131,14 @@ class VicReg(torch.nn.Module):
                 epoch_loss += loss_value
                 batch_count += 1
                 
-                pbar.set_postfix({'loss': f"{loss_value:.4f}"})
+                pbar.set_postfix({
+                    'loss': f"{loss_value:.4f}",
+                    'lr': f"{scheduler.get_last_lr()[0]:.2e}"
+                })
             
             # End of epoch
             avg_epoch_loss = epoch_loss / batch_count
             epoch_losses.append(avg_epoch_loss)
-            scheduler.step()
             
             print(f"Epoch {epoch + 1}/{epochs}, Avg Loss: {avg_epoch_loss:.4f}")
             
@@ -158,29 +173,10 @@ class VicReg(torch.nn.Module):
         self.model.eval()
         self.expander.eval()
         
-        # Evaluate VicReg loss
-        total_loss = 0.0
-        batch_count = 0
-        
-        with torch.no_grad():
-            for batch in val_loader:
-                x, _ = batch
-                x = x.to(self.device)
-                
-                z = self.model(x)
-                z_expanded = self.expander(z)
-                loss = self.loss_fn(z_expanded)
-                
-                total_loss += loss.item()
-                batch_count += 1
-        
-        avg_loss = total_loss / batch_count
-        
         # Run KNN evaluation
         knn_acc = run_knn_eval(self.model, train_loader, val_loader, self.device)
         
         # Print metrics
-        print(f"Validation Loss: {avg_loss:.4f}")
         print(f"KNN Accuracy: {knn_acc:.2f}%")
         
         # Return to training mode
@@ -188,7 +184,6 @@ class VicReg(torch.nn.Module):
         self.expander.train()
         
         return {
-            'vicreg_loss': avg_loss,
             'knn_accuracy': knn_acc
         }
     
