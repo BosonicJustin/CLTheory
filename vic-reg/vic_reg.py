@@ -3,6 +3,7 @@ from loss import VicRegLoss
 from tqdm import tqdm
 import os
 from evals.knn_eval import run_knn_eval
+import kornia.augmentation as K
 
 
 class VicReg(torch.nn.Module):
@@ -20,6 +21,22 @@ class VicReg(torch.nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model.to(self.device)
         self.expander = self.expander.to(self.device)
+        
+        # Initialize augmentations
+        self.crop_aug = K.RandomResizedCrop(
+            size=(224, 224),
+            scale=(0.2, 1.0),
+            ratio=(0.75, 1.33),
+            p=1.0
+        ).to(self.device)
+        
+        self.color_aug = K.ColorJitter(
+            brightness=0.4,
+            contrast=0.4,
+            saturation=0.4,
+            hue=0.1,
+            p=1.0
+        ).to(self.device)
         
     def train(self, train_loader, val_loader=None, epochs=100, lr=0.5, momentum=0.9, weight_decay=1e-4,
               save_every=10, eval_every=10, checkpoint_dir='checkpoints', resume_from=None):
@@ -75,12 +92,20 @@ class VicReg(torch.nn.Module):
                 x, _ = batch
                 x = x.to(self.device)
                 
-                # Forward pass
-                z = self.model(x)
-                z_expanded = self.expander(z)
+                # Create two augmented views
+                x_crop = self.crop_aug(x)
+                x_color = self.color_aug(x)
                 
-                # Compute loss
-                loss = self.loss_fn(z_expanded)
+                # Get encodings for both views
+                z_crop = self.model(x_crop)
+                z_color = self.model(x_color)
+                
+                # Expand both encodings
+                z_crop_expanded = self.expander(z_crop)
+                z_color_expanded = self.expander(z_color)
+                
+                # Compute loss between the two views
+                loss = self.loss_fn(z_crop_expanded, z_color_expanded)
                 
                 # Backward pass
                 optimizer.zero_grad()

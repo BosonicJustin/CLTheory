@@ -7,7 +7,7 @@ class ResNet50Encoder(nn.Module):
     def __init__(self):
         super(ResNet50Encoder, self).__init__()
         # Load ResNet-50
-        resnet = models.resnet50(pretrained=False)
+        resnet = models.resnet50()
         
         # Remove the final classification layer
         self.encoder = nn.Sequential(*list(resnet.children())[:-1])
@@ -36,7 +36,7 @@ class Expander(nn.Module):
         return self.expander(x)
 
 
-def create_vicreg_components(pretrained=False):
+def create_vicreg_components():
     """
     Helper function to create both the encoder and expander components.
     
@@ -46,6 +46,6 @@ def create_vicreg_components(pretrained=False):
     Returns:
         tuple: (encoder, expander) both ready to use
     """
-    encoder = ResNet50Encoder(pretrained=pretrained)
+    encoder = ResNet50Encoder()
     expander = Expander()
     return encoder, expander

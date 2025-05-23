@@ -55,7 +55,7 @@ def main():
     train_loader, test_loader = get_cifar10_dataloaders()
     
     # Create model components
-    encoder, expander = create_vicreg_components(pretrained=False)
+    encoder, expander = create_vicreg_components()
     
     # Create VicReg model
     vicreg = VicReg(
