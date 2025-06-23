@@ -6,6 +6,7 @@ import os
 
 from evals.disentanglement import linear_disentanglement, permutation_disentanglement
 from evals.knn_eval import run_knn_eval
+from evals.distance_preservation import calculate_angle_preservation_error
 
 class InfoNceLoss(torch.nn.Module):
     def __init__(self, temperature):
@@ -68,6 +69,8 @@ class SimCLR(torch.nn.Module):
 
         linear_scores = []
         perm_scores = []
+        distance_preservation_errors = []
+        eval_losses = []
 
         for i in range(iterations):
             z, z_sim = self.sample_pair(batch_size)
@@ -90,15 +93,19 @@ class SimCLR(torch.nn.Module):
                 perm_dis, _ = permutation_disentanglement(z.cpu(), z_enc.cpu())
                 perm_score, _ = perm_dis
 
+                distance_preservation_error = calculate_angle_preservation_error(z.cpu(), z_enc.cpu())
+
                 linear_scores.append(lin_score)
                 perm_scores.append(perm_score)
+                distance_preservation_errors.append(distance_preservation_error)
+                eval_losses.append(loss_result)
 
                 print('Loss:', loss_result, 'Samples processed:', i,
                       "linear disentanglement:", lin_score,
-                      'permutation disentanglement:', perm_score)
+                      'permutation disentanglement:', perm_score, 'angle_preservation_error:', distance_preservation_error)
 
         self.encoder.eval()
-        return self.encoder, {'linear_scores': linear_scores, 'perm_scores': perm_scores}
+        return self.encoder, {'linear_scores': linear_scores, 'perm_scores': perm_scores, 'angle_preservation_errors': distance_preservation_errors, 'eval_losses': eval_losses}
 
 class SimCLRImages(nn.Module):
     def __init__(self, encoder, training_dataset, image_h, image_w,
