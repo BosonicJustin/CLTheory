@@ -143,4 +143,8 @@ class Patches(torch.nn.Module):
         z = z.to(self.device)
         x = piecewise_rotation(z, self.slice_number, dim=2)
         x = rotate_3d(x, 0, torch.pi / 2, 0.)
-        return piecewise_rotation(x, self.slice_number, dim=2)
+        
+        result = piecewise_rotation(x, self.slice_number, dim=2)
+        
+        # Clamp to handle floating-point precision errors
+        return torch.clamp(result, min=-1.0, max=1.0).to(self.device)

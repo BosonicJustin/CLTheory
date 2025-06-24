@@ -176,3 +176,11 @@ datasets/
 # pixi environments
 .pixi
 *.egg-info
+runs/
+checkpoints*/
+saved_models/
+saved_transforms/
+*.png
+*.pth
+data/*.tar.gz
+data/cifar-10-batches-py/

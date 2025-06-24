@@ -3,6 +3,7 @@ import layers as ls
 from typing import List, Union
 from typing_extensions import Literal
 
+import torch.nn.functional as F
 
 __all__ = ["get_mlp"]
 
@@ -166,3 +167,26 @@ def construct_mlp_encoder(latent_dim, data_dim, device="cpu"):
         ],
         output_normalization="fixed_sphere",
     ).to(device)
+
+
+class SphericalEncoder(nn.Module):
+    def __init__(self, input_dim=3, hidden_dims=[128, 256, 128], output_dim=3):
+        super().__init__()
+        layers = []
+        prev_dim = input_dim
+        
+        for hidden_dim in hidden_dims:
+            layers.extend([
+                nn.Linear(prev_dim, hidden_dim),
+                nn.ReLU(),
+                nn.BatchNorm1d(hidden_dim)  # Helps with spherical training
+            ])
+            prev_dim = hidden_dim
+            
+        self.backbone = nn.Sequential(*layers)
+        self.projection = nn.Linear(prev_dim, output_dim)
+        
+    def forward(self, x):
+        h = self.backbone(x)
+        z = self.projection(h)
+        return F.normalize(z, p=2, dim=-1)
