@@ -64,7 +64,7 @@ class SimCLR(torch.nn.Module):
         linear = linear_disentanglement(control_latent, control_latent)
         print("Linear control score:", linear[0][0])
 
-        perm = permutation_disentanglement(control_latent, control_latent)
+        perm = permutation_disentanglement(control_latent, control_latent, mode="pearson", solver="munkres")
         print("Permutation control score:", perm[0][0])
 
         linear_scores = []
