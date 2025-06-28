@@ -19,7 +19,8 @@ from simclr.simclr import SimCLR
 from spaces import NSphereSpace
 
 
-def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, number_of_runs=1, slice_number=4):
+def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, number_of_runs=1, 
+                          slice_number=4, diversity_condition="holds"):
     """
     Run the spherical SimCLR experiment with Patches transformation multiple times.
     
@@ -29,6 +30,7 @@ def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, nu
         run_name: Name for the experiment run (mandatory)
         number_of_runs: Number of times to repeat the experiment (mandatory)
         slice_number: Number of slices for the Patches transformation (default: 4)
+        diversity_condition: Whether diversity condition holds or is violated (default: "holds")
     """
     
     if run_name is None:
@@ -40,6 +42,9 @@ def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, nu
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using device: {device}')
     
+    # Print diversity condition status
+    print(f"Diversity condition: {diversity_condition.upper()}")
+    
     # Create run directory
     run_dir = Path(f"runs/{run_name}")
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -48,10 +53,33 @@ def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, nu
     sphere = NSphereSpace(3)
     g_patches = Patches(slice_number=slice_number, device=device)
     
-    # Setup sampling functions
+    # Setup sampling functions based on diversity condition
     tau = 0.3
     kappa = 1 / tau
-    sample_pair_fixed = lambda batch: sphere.sample_pair_vmf(batch, kappa)
+    
+    if diversity_condition == "holds":
+        # Normal vMF sampling
+        sample_pair_fixed = lambda batch: sphere.sample_pair_vmf(batch, kappa)
+    else:  # diversity_condition == "violated"
+        # Fixed dimensions sampling - violates diversity condition
+        fixed_dims_on_sample = 1
+        sub_sphere = NSphereSpace(2)  # For the remaining dimensions
+        
+        def sample_conditional_with_dims_fixed(z, batch, u_dim):
+            u = z[:, :u_dim]
+            v = z[:, u_dim:]
+            
+            v_norm = torch.nn.functional.normalize(v, dim=-1, p=2)
+            aug_samples_v = sub_sphere.von_mises_fisher(v_norm, kappa, batch, device=device) * torch.norm(v, p=2, dim=-1, keepdim=True)
+            
+            return torch.cat((u, aug_samples_v), dim=-1)
+        
+        def sample_pair_with_fixed_dimension(batch, u_dim):
+            z = sphere.uniform(batch, device=device)
+            return z, sample_conditional_with_dims_fixed(z, batch, u_dim)
+        
+        sample_pair_fixed = lambda batch: sample_pair_with_fixed_dimension(batch, fixed_dims_on_sample)
+    
     sample_uniform_fixed = lambda batch: sphere.uniform(batch, device=device)
     
     # Store all results
@@ -62,8 +90,10 @@ def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, nu
             'run_name': run_name,
             'number_of_runs': number_of_runs,
             'slice_number': slice_number,
+            'diversity_condition': diversity_condition,
             'tau': tau,
             'kappa': kappa,
+            'fixed_dims_on_sample': 1 if diversity_condition == "violated" else None,
             'device': str(device)
         },
         'runs': []
@@ -71,6 +101,8 @@ def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, nu
     
     print(f"Starting {number_of_runs} runs of Patches SimCLR experiment")
     print(f"Config: batch_size={batch_size}, iterations={iterations}, slice_number={slice_number}")
+    if diversity_condition == "violated":
+        print(f"Fixed dimensions for sampling: 1")
     print(f"Results will be saved to: {run_dir}")
     
     for run_idx in range(number_of_runs):
@@ -94,7 +126,8 @@ def run_patches_experiment(batch_size=6144, iterations=100000, run_name=None, nu
             'model_state_dict': trained_encoder.state_dict(),
             'run_idx': run_idx,
             'final_scores': scores,
-            'slice_number': slice_number
+            'slice_number': slice_number,
+            'diversity_condition': diversity_condition
         }, model_path)
         
         # Store run results
@@ -151,6 +184,9 @@ def main():
                         help='Number of times to repeat the experiment (required)')
     parser.add_argument('--slice_number', type=int, default=4,
                         help='Number of slices for Patches transformation (default: 4)')
+    parser.add_argument('--diversity_condition', type=str, default='holds',
+                        choices=['holds', 'violated'],
+                        help='Whether diversity condition holds or is violated (default: holds)')
     
     args = parser.parse_args()
     
@@ -159,7 +195,8 @@ def main():
         iterations=args.iterations,
         run_name=args.run_name,
         number_of_runs=args.number_of_runs,
-        slice_number=args.slice_number
+        slice_number=args.slice_number,
+        diversity_condition=args.diversity_condition
     )
 
 

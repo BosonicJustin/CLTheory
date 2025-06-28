@@ -22,7 +22,7 @@ from spaces import NSphereSpace
 
 def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number_of_runs=1, 
                        n_layers=3, act_fct: Literal['relu', 'leaky_relu', 'elu', 'smooth_leaky_relu', 'softplus'] = "leaky_relu", 
-                       cond_thresh_ratio=0.25):
+                       cond_thresh_ratio=0.25, diversity_condition="holds"):
     """
     Run the spherical SimCLR experiment with invertible MLP transformation multiple times.
     
@@ -34,6 +34,7 @@ def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number
         n_layers: Number of layers in the invertible MLP (default: 3)
         act_fct: Activation function for the MLP (default: "leaky_relu")
         cond_thresh_ratio: Condition threshold ratio for MLP construction (default: 0.25)
+        diversity_condition: Whether diversity condition holds or is violated (default: "holds")
     """
     
     if run_name is None:
@@ -45,6 +46,9 @@ def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Using device: {device}')
     
+    # Print diversity condition status
+    print(f"Diversity condition: {diversity_condition.upper()}")
+    
     # Create run directory
     run_dir = Path(f"runs/{run_name}")
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -52,10 +56,33 @@ def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number
     # Setup sphere space and transformations
     sphere = NSphereSpace(3)
     
-    # Setup sampling functions
+    # Setup sampling functions based on diversity condition
     tau = 0.3
     kappa = 1 / tau
-    sample_pair_fixed = lambda batch: sphere.sample_pair_vmf(batch, kappa)
+    
+    if diversity_condition == "holds":
+        # Normal vMF sampling
+        sample_pair_fixed = lambda batch: sphere.sample_pair_vmf(batch, kappa)
+    else:  # diversity_condition == "violated"
+        # Fixed dimensions sampling - violates diversity condition
+        fixed_dims_on_sample = 1
+        sub_sphere = NSphereSpace(2)  # For the remaining dimensions
+        
+        def sample_conditional_with_dims_fixed(z, batch, u_dim):
+            u = z[:, :u_dim]
+            v = z[:, u_dim:]
+            
+            v_norm = torch.nn.functional.normalize(v, dim=-1, p=2)
+            aug_samples_v = sub_sphere.von_mises_fisher(v_norm, kappa, batch, device=device) * torch.norm(v, p=2, dim=-1, keepdim=True)
+            
+            return torch.cat((u, aug_samples_v), dim=-1)
+        
+        def sample_pair_with_fixed_dimension(batch, u_dim):
+            z = sphere.uniform(batch, device=device)
+            return z, sample_conditional_with_dims_fixed(z, batch, u_dim)
+        
+        sample_pair_fixed = lambda batch: sample_pair_with_fixed_dimension(batch, fixed_dims_on_sample)
+    
     sample_uniform_fixed = lambda batch: sphere.uniform(batch, device=device)
     
     # Store all results
@@ -68,8 +95,10 @@ def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number
             'n_layers': n_layers,
             'act_fct': act_fct,
             'cond_thresh_ratio': cond_thresh_ratio,
+            'diversity_condition': diversity_condition,
             'tau': tau,
             'kappa': kappa,
+            'fixed_dims_on_sample': 1 if diversity_condition == "violated" else None,
             'device': str(device)
         },
         'runs': []
@@ -78,6 +107,8 @@ def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number
     print(f"Starting {number_of_runs} runs of MLP SimCLR experiment")
     print(f"Config: batch_size={batch_size}, iterations={iterations}")
     print(f"MLP Config: n_layers={n_layers}, act_fct={act_fct}, cond_thresh_ratio={cond_thresh_ratio}")
+    if diversity_condition == "violated":
+        print(f"Fixed dimensions for sampling: 1")
     print(f"Results will be saved to: {run_dir}")
     
     for run_idx in range(number_of_runs):
@@ -112,7 +143,8 @@ def run_mlp_experiment(batch_size=6144, iterations=100000, run_name=None, number
                 'n_layers': n_layers,
                 'act_fct': act_fct,
                 'cond_thresh_ratio': cond_thresh_ratio
-            }
+            },
+            'diversity_condition': diversity_condition
         }, model_path)
         
         # Store run results
@@ -174,6 +206,9 @@ def main():
                         help='Activation function for the MLP (default: leaky_relu)')
     parser.add_argument('--cond_thresh_ratio', type=float, default=0.25,
                         help='Condition threshold ratio for MLP construction (default: 0.25)')
+    parser.add_argument('--diversity_condition', type=str, default='holds',
+                        choices=['holds', 'violated'],
+                        help='Whether diversity condition holds or is violated (default: holds)')
     
     args = parser.parse_args()
     
@@ -184,7 +219,8 @@ def main():
         number_of_runs=args.number_of_runs,
         n_layers=args.n_layers,
         act_fct=args.act_fct,
-        cond_thresh_ratio=args.cond_thresh_ratio
+        cond_thresh_ratio=args.cond_thresh_ratio,
+        diversity_condition=args.diversity_condition
     )
 
 

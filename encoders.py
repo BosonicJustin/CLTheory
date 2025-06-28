@@ -190,3 +190,12 @@ class SphericalEncoder(nn.Module):
         h = self.backbone(x)
         z = self.projection(h)
         return F.normalize(z, p=2, dim=-1)
+
+class LinearEncoder(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        self.linear = nn.Linear(input_dim, output_dim)
+        
+    def forward(self, x):
+        z = self.linear(x)
+        return F.normalize(z, p=2, dim=-1)
