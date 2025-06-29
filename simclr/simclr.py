@@ -115,12 +115,16 @@ class SimCLRImages(nn.Module):
                  save_every=10,
                  eval_every=10,
                  val_dataset=None,
+                 permutation_transform=None,
                  ):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.encoder = encoder.to(self.device)
         self.training_dataset = training_dataset
         self.isomorphism = isomorphism if isomorphism is not None else nn.Identity()
+        self.permutation_transform = permutation_transform
+        if self.permutation_transform is not None:
+            self.permutation_transform = self.permutation_transform.to(self.device)
         self.loss_fn = torch.nn.functional.cross_entropy
         self.normalize = lambda z: torch.nn.functional.normalize(z, p=2.0, dim=-1, eps=1e-12)
         self.optimizer = torch.optim.SGD(self.encoder.parameters(), lr=0.5, momentum=0.9, weight_decay=1e-4)
@@ -141,6 +145,8 @@ class SimCLRImages(nn.Module):
         self.epoch_losses = []
 
         print(f"Using device: {self.device}")
+        if self.permutation_transform is not None:
+            print("🔄 Permutation will be applied after augmentations")
         os.makedirs(self.checkpoint_dir, exist_ok=True)
 
         if self.resume_from:
@@ -182,6 +188,12 @@ class SimCLRImages(nn.Module):
         self.optimizer.zero_grad()
         x = self.T1(batch)
         x_sim = self.T2(batch)
+        
+        # Apply permutation after augmentations if specified
+        if self.permutation_transform is not None:
+            x = self.permutation_transform(x)
+            x_sim = self.permutation_transform(x_sim)
+        
         x_all = torch.cat((x, x_sim), dim=0)
         z_all = self.encoder(x_all)
         l = self.loss(z_all)

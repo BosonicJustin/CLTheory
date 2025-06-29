@@ -7,8 +7,6 @@ from torchvision.datasets import CIFAR10
 import os
 import pickle
 
-from image_transforms.image_loader_transform import LoaderTransformImagePermutation
-
 from simclr.simclr import SimCLRImages
 from transformations.image_permutations import ImagePermutationTransform
 
@@ -31,14 +29,13 @@ with open('./saved_transforms/image_permutation.pkl', 'wb') as f:
     pickle.dump(perm_transform, f)
 print(f"Permutation transform saved to ./saved_transforms/image_permutation.pkl")
 
-# Transformation pipeline with permutation included
+# Transformation pipeline WITHOUT permutation (permutation will be applied after augmentations in SimCLRImages)
 transform = transforms.Compose([
     transforms.Resize((224, 224)),  # ResNet50 expects 224x224 images
-    transforms.ToTensor(),
-    LoaderTransformImagePermutation(perm_transform)  # Apply the permutation as part of the transform pipeline
+    transforms.ToTensor()
 ])
 
-# Load CIFAR-10 dataset with permutation transform
+# Load CIFAR-10 dataset without permutation transform
 trainset = CIFAR10(root='./datasets', train=True, download=True, transform=transform)
 train_loader = DataLoader(trainset, batch_size=256, shuffle=True, num_workers=2)
 
@@ -49,17 +46,18 @@ test_loader = DataLoader(trainset_test, batch_size=256, shuffle=True, num_worker
 resnet50 = models.resnet50(weights=None)
 resnet50.fc = nn.Identity()
 
-# Train the model with Identity as isomorphism (since permutation is now in transforms)
+# Train the model with permutation applied after augmentations
 trained_resnet50_identity, losses = SimCLRImages(
     resnet50,
     train_loader,
     224,
     224,
-    isomorphism=nn.Identity(),  # Using Identity as isomorphism since permutation is in transforms
+    isomorphism=nn.Identity(),  # Keep Identity for isomorphism
+    permutation_transform=perm_transform,  # Pass permutation to be applied after augmentations
     epochs=100,
     temperature=0.5,
     save_every=10,
-    checkpoint_dir='./checkpoints_isomorphic_training_permutation_cifar10_sgd_run1',
+    checkpoint_dir='./checkpoints_isomorphic_training_permutation_cifar10_sgd_run2',
     val_dataset=test_loader,
     eval_every=10
 ).train()

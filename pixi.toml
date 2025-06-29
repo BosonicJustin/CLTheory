@@ -1,5 +1,5 @@
-[workspace]
-channels = ["conda-forge"]
+[project]
+channels = ["conda-forge", "pytorch", "nvidia"]
 name = "CLTheory"
 platforms = ["linux-64"]
 version = "0.1.0"
@@ -7,9 +7,11 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
-pytorch-gpu = ">=1.11.0,<2"
+pytorch = { version = "*", channel = "pytorch" }
+torchvision = { version = "*", channel = "pytorch" }
+pytorch-cuda = { version = "*", channel = "pytorch" }
+kornia = ">=0.6.0,<0.7"
 ipykernel = ">=6.29.5,<7"
-kornia = ">=0.8.0,<0.9"
 tqdm = ">=4.67.1,<5"
 scikit-learn = ">=1.6.1,<2"
 munkres = ">=1.1.4,<2"
