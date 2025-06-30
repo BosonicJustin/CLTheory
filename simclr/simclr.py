@@ -90,7 +90,7 @@ class SimCLR(torch.nn.Module):
                 lin_dis, _ = linear_disentanglement(z.cpu(), z_enc.cpu())
                 lin_score, _ = lin_dis
 
-                perm_dis, _ = permutation_disentanglement(z.cpu(), z_enc.cpu())
+                perm_dis, _ = permutation_disentanglement(z.cpu(), z_enc.cpu(), mode="pearson", solver="munkres")
                 perm_score, _ = perm_dis
 
                 distance_preservation_error = calculate_angle_preservation_error(z.cpu(), z_enc.cpu())
@@ -241,3 +241,122 @@ class SimCLRImages(nn.Module):
 
         self.encoder.eval()
         return self.encoder, {'batch_losses': self.losses, 'epoch_losses': self.epoch_losses}
+
+
+class InfoNceLossAdjusted(torch.nn.Module):
+    def __init__(self, temperature):
+        super(InfoNceLossAdjusted, self).__init__()
+        self.temperature = temperature
+    
+    def forward(self, z_recovered, z_enc_sim, z_enc_neg):
+        pos = (- (z_recovered * z_enc_sim).sum(dim=-1) / self.temperature).mean()
+        neg = (torch.log(torch.exp((z_recovered.unsqueeze(1) * z_enc_neg).sum(dim=-1) / self.temperature).sum(dim=-1))).mean()
+
+        total = pos + neg
+
+        # Return pos and neg as detached values (no gradients) and total with gradients
+        return pos.detach(), neg.detach(), total
+
+class SimCLRAdjusted(nn.Module):
+    def __init__(self, d, d_fix, neg_samples, decoder, encoder, sample_pair, sample_negative, tau=0.1, device=None):
+        super(SimCLRAdjusted, self).__init__()
+
+        assert d > 0, "d must be greater than 0"
+        assert d_fix >= 0, "d_fix must be greater than 0"
+        assert d > d_fix, "d must be greater than d_fix"
+
+        self.d = d
+        self.d_fix = d_fix
+        self.neg_samples = neg_samples
+        self.tau = tau
+        self.decoder = decoder
+        self.encoder = encoder
+        self.sample_pair = sample_pair
+        self.sample_negative = sample_negative
+
+        self.loss_fn = InfoNceLossAdjusted(tau)
+
+        self.device = device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
+
+        self.decoder.to(self.device)
+        self.encoder.to(self.device)
+
+
+    def train(self, batch_size, iterations):
+        for p in self.decoder.parameters():
+            p.requires_grad = False
+
+        adam = torch.optim.Adam(self.encoder.parameters(), lr=1e-4)
+        self.encoder.train()
+        h = lambda latent: self.encoder(self.decoder(latent.to(self.device)))
+
+        control_latent, _ = self.sample_pair(batch_size)
+        control_latent = control_latent.to(self.device)
+
+        linear = linear_disentanglement(control_latent, control_latent)
+        print("Linear control score:", linear[0][0])
+
+        perm = permutation_disentanglement(control_latent, control_latent, mode="pearson", solver="munkres")
+        print("Permutation control score:", perm[0][0])
+
+        linear_scores = []
+        perm_scores = []
+        distance_preservation_errors = []
+        eval_losses = []
+        eval_pos_losses = []  # Track positive losses separately
+        eval_neg_losses = []  # Track negative losses separately
+
+        for i in range(iterations):
+            adam.zero_grad()
+            
+            z, z_sim = self.sample_pair(batch_size)
+            z = z.to(self.device)
+            z_sim = z_sim.to(self.device)
+
+            z_neg = self.sample_negative(z, self.neg_samples).to(self.device)
+            z_enc = h(z)
+            z_enc_sim = h(z_sim)
+
+            # Reshape from (N, M, d) to (N * M, d), apply h, then reshape back to (N, M, d)
+            z_neg_reshaped = z_neg.view(-1, z_neg.size(-1))  # (N * M, d)
+            z_enc_neg_reshaped = h(z_neg_reshaped)  # (N * M, d)
+            z_enc_neg = z_enc_neg_reshaped.view(z_neg.size(0), z_neg.size(1), -1)  # (N, M, d)
+
+            pos_loss, neg_loss, total_loss = self.loss_fn(z_enc, z_enc_sim, z_enc_neg)
+
+            # Convert to tensors for backward pass
+            total_loss_tensor = torch.tensor(total_loss, requires_grad=True, device=self.device)
+            total_loss_tensor.backward()
+            adam.step()
+
+            if i % 20 == 1:
+                lin_dis, _ = linear_disentanglement(z.cpu(), z_enc.cpu())
+                lin_score, _ = lin_dis
+
+                perm_dis, _ = permutation_disentanglement(z.cpu(), z_enc.cpu(), mode="pearson", solver="munkres")
+                perm_score, _ = perm_dis
+
+                distance_preservation_error = calculate_angle_preservation_error(z.cpu(), z_enc.cpu())
+
+                linear_scores.append(lin_score)
+                perm_scores.append(perm_score)
+                distance_preservation_errors.append(distance_preservation_error)
+                eval_losses.append(total_loss)
+                eval_pos_losses.append(pos_loss)  # Store positive loss
+                eval_neg_losses.append(neg_loss)  # Store negative loss
+
+                print('Loss:', total_loss, 'Pos Loss:', pos_loss, 'Neg Loss:', neg_loss, 
+                    'Samples processed:', i,
+                    "linear disentanglement:", lin_score,
+                    'permutation disentanglement:', perm_score, 
+                    'angle_preservation_error:', distance_preservation_error)
+
+        self.encoder.eval()
+        return self.encoder, {
+            'linear_scores': linear_scores, 
+            'perm_scores': perm_scores, 
+            'angle_preservation_errors': distance_preservation_errors, 
+            'eval_losses': eval_losses,
+            'eval_pos_losses': eval_pos_losses,  # Include positive losses
+            'eval_neg_losses': eval_neg_losses   # Include negative losses
+        }

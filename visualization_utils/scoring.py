@@ -1,9 +1,13 @@
-
 def plot_scores(plt, scores):
     linear_scores = scores['linear_scores']
     perm_scores = scores['perm_scores']
     angle_preservation_errors = scores['angle_preservation_errors']
     eval_losses = scores['eval_losses']
+    
+    # Check if positive and negative losses exist
+    has_separate_losses = 'eval_pos_losses' in scores and 'eval_neg_losses' in scores
+    eval_pos_losses = scores.get('eval_pos_losses', [])
+    eval_neg_losses = scores.get('eval_neg_losses', [])
 
     fig, axes = plt.subplots(1, 4, figsize=(25, 5))
 
@@ -31,8 +35,13 @@ def plot_scores(plt, scores):
     axes[2].legend()
     axes[2].grid(True)
 
-    # Plot eval losses
-    axes[3].plot(eval_losses, label='Eval Losses', color='green')
+    # Plot eval losses (total, positive, and negative if available)
+    axes[3].plot(eval_losses, label='Total Loss', color='green', linewidth=2)
+    
+    if has_separate_losses and eval_pos_losses and eval_neg_losses:
+        axes[3].plot(eval_pos_losses, label='Positive Loss', color='blue', linestyle='--', alpha=0.7)
+        axes[3].plot(eval_neg_losses, label='Negative Loss', color='red', linestyle='--', alpha=0.7)
+    
     axes[3].set_xlabel('Checkpoints')
     axes[3].set_ylabel('Loss')
     axes[3].set_title('Evaluation Losses')
