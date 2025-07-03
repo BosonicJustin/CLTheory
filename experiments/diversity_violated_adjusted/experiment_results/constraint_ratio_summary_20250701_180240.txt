@@ -1,0 +1,10 @@
+Constraint Ratio Experiment Results
+Generated: 2025-07-01T18:19:07.929033
+Experiment timestamp: 20250701_180240
+
+COMPLETED RATIOS:
+--------------------------------------------------
+Ratio 0.0: Linear 0.994±0.000, Perm 0.798±0.068
+Ratio 0.1: Linear 0.997±0.000, Perm 0.784±0.062
+
+REMAINING: 9 ratios (~68.2 minutes)

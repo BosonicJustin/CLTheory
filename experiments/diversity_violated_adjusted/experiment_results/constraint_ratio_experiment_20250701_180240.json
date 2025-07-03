@@ -1,0 +1,155 @@
+{
+  "timestamp": "20250701_180240",
+  "device": "cuda",
+  "batch_size": 1000,
+  "iterations": 5000,
+  "temperature": 0.3,
+  "d_fix": 1,
+  "neg_samples": 1000,
+  "constraint_ratios": [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "n_runs": 5,
+  "results": [
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 0,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.994312047958374,
+        "perm_score": 0.6853293855836243,
+        "angle_error": 0.04766020178794861,
+        "final_loss": 5.348504066467285
+      },
+      "run_time_seconds": 130.35446691513062,
+      "timestamp": "2025-07-01T18:04:50.930268"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 1,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.9943831562995911,
+        "perm_score": 0.7544618906456225,
+        "angle_error": 0.04750247299671173,
+        "final_loss": 5.348923206329346
+      },
+      "run_time_seconds": 105.47513318061829,
+      "timestamp": "2025-07-01T18:06:36.405962"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 2,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.9947789311408997,
+        "perm_score": 0.8581489798638947,
+        "angle_error": 0.045368898659944534,
+        "final_loss": 5.3920111656188965
+      },
+      "run_time_seconds": 98.54595112800598,
+      "timestamp": "2025-07-01T18:08:14.952257"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 3,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.9943767189979553,
+        "perm_score": 0.8555273224964924,
+        "angle_error": 0.047947559505701065,
+        "final_loss": 5.3770432472229
+      },
+      "run_time_seconds": 99.23439645767212,
+      "timestamp": "2025-07-01T18:09:54.187012"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 4,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.9944761395454407,
+        "perm_score": 0.8354781184642514,
+        "angle_error": 0.0486014224588871,
+        "final_loss": 5.365494728088379
+      },
+      "run_time_seconds": 98.82030200958252,
+      "timestamp": "2025-07-01T18:11:33.007688"
+    },
+    {
+      "constraint_ratio": 0.1,
+      "run_id": 0,
+      "result": {
+        "constraint_ratio": 0.1,
+        "linear_score": 0.996981143951416,
+        "perm_score": 0.8198729854205625,
+        "angle_error": 0.03349927067756653,
+        "final_loss": 5.489847183227539
+      },
+      "run_time_seconds": 90.58826184272766,
+      "timestamp": "2025-07-01T18:13:03.596582"
+    },
+    {
+      "constraint_ratio": 0.1,
+      "run_id": 1,
+      "result": {
+        "constraint_ratio": 0.1,
+        "linear_score": 0.9971046447753906,
+        "perm_score": 0.7579629662558904,
+        "angle_error": 0.03405420854687691,
+        "final_loss": 5.468972206115723
+      },
+      "run_time_seconds": 91.15557551383972,
+      "timestamp": "2025-07-01T18:14:34.752559"
+    },
+    {
+      "constraint_ratio": 0.1,
+      "run_id": 2,
+      "result": {
+        "constraint_ratio": 0.1,
+        "linear_score": 0.9971469044685364,
+        "perm_score": 0.6904808078028677,
+        "angle_error": 0.03278845548629761,
+        "final_loss": 5.488186836242676
+      },
+      "run_time_seconds": 91.4446120262146,
+      "timestamp": "2025-07-01T18:16:06.197543"
+    },
+    {
+      "constraint_ratio": 0.1,
+      "run_id": 3,
+      "result": {
+        "constraint_ratio": 0.1,
+        "linear_score": 0.9969612956047058,
+        "perm_score": 0.7750737131869135,
+        "angle_error": 0.03592820465564728,
+        "final_loss": 5.508638381958008
+      },
+      "run_time_seconds": 90.6027398109436,
+      "timestamp": "2025-07-01T18:17:36.800683"
+    },
+    {
+      "constraint_ratio": 0.1,
+      "run_id": 4,
+      "result": {
+        "constraint_ratio": 0.1,
+        "linear_score": 0.9967374801635742,
+        "perm_score": 0.8746447908880944,
+        "angle_error": 0.03628236800432205,
+        "final_loss": 5.507996559143066
+      },
+      "run_time_seconds": 91.12731432914734,
+      "timestamp": "2025-07-01T18:19:07.928418"
+    }
+  ]
+}

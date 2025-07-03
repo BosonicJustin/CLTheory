@@ -15,4 +15,11 @@ def perform_linear_experiment(data_dimension, iterations, batch, latent_dim, sam
 
     f, scores = simclr.train(batch, iterations)
 
+    h_w = f.linear.weight @ g.decoder.weight
+    A = h_w.T @ h_w
+
+    print('Orthogonality of h:', A)
+    print('Orthogonality of h:', A / torch.diag(A).max())
+    print('Orthogonality score of h:', A.abs().sum() - A.abs().trace())
+
     return lambda z: f(g(z)), scores
