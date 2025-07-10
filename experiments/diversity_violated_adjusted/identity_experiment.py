@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch import functional as F
 from encoders import SphericalEncoder, LinearEncoder
+from data.generation import InjectiveLinearDecoder
 from spaces import NSphereSpace
 from visualization_utils.spheres import visualize_spheres_side_by_side, scatter3d_sphere
 import matplotlib.pyplot as plt
@@ -18,13 +19,19 @@ full_sphere = NSphereSpace(3)
 sub_sphere = NSphereSpace(2)
 
 d_fix = 1
-d = 3
+d_input = 3  # Input dimension (from sphere)
+d_intermediate = 7  # Intermediate dimension (after g, before f)
+d_output = 3  # Final output dimension (after f)
 tau = 0.3
 kappa = 1 / tau
 batch_size = 2000
 neg_samples = 2000
 iterations = 5000  # Reduced for faster experimentation
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+# Initialize InjectiveLinearDecoder ONCE - reused for all experiments (3D → 7D)
+g = InjectiveLinearDecoder(latent_dim=d_input, output_dim=d_intermediate).to(device)
+print(f"🔧 Initialized shared InjectiveLinearDecoder: {d_input}D → {d_intermediate}D")
 
 def sample_negative_samples(Z, M, constraint_ratio):
     """
@@ -42,7 +49,7 @@ def sample_negative_samples(Z, M, constraint_ratio):
     if M_constrained > 0:
         z_fixed = Z[:, :d_fix].to(device)
         radii = torch.sqrt(1 - (z_fixed ** 2).sum(dim=1)).to(device)
-        neg_constrained = torch.randn(N, M_constrained, d - d_fix, device=device)
+        neg_constrained = torch.randn(N, M_constrained, d_input - d_fix, device=device)
         neg_constrained = neg_constrained / neg_constrained.norm(dim=2, keepdim=True)
         neg_constrained = neg_constrained * radii.view(-1, 1, 1)
         neg_constrained = torch.cat((z_fixed.unsqueeze(1).expand(-1, M_constrained, -1), neg_constrained), dim=2)
@@ -50,7 +57,7 @@ def sample_negative_samples(Z, M, constraint_ratio):
     
     # UNCONSTRAINED NEGATIVES (full sphere)
     if M_unconstrained > 0:
-        neg_unconstrained = full_sphere.uniform(N * M_unconstrained).to(device).reshape(N, M_unconstrained, 3)
+        neg_unconstrained = full_sphere.uniform(N * M_unconstrained).to(device).reshape(N, M_unconstrained, d_input)
         negatives_list.append(neg_unconstrained)
     
     # COMBINE
@@ -60,7 +67,7 @@ def sample_negative_samples(Z, M, constraint_ratio):
         return negatives_list[0]
     else:
         # Fallback - shouldn't happen
-        return torch.randn(N, M, d, device=device)
+        return torch.randn(N, M, d_input, device=device)
 
 def sample_conditional_with_dims_fixed(z, batch, u_dim):
     u = z[:, :u_dim].to(device)
@@ -95,12 +102,12 @@ class InfoNceLossAdjusted(nn.Module):
 def train_model(constraint_ratio, run_id=0, verbose=False):
     """Train model with given constraint ratio and return final metrics"""
     
-    # Initialize fresh model for each experiment
-    # f = LinearEncoder(3, 3).to(device)
-    f = SphericalEncoder(input_dim=3, hidden_dims=[128, 256, 256, 256, 128], output_dim=3).to(device)
+    # Initialize fresh LinearEncoder for each experiment (f is reinitialized)
+    f = SphericalEncoder(input_dim=d_intermediate, hidden_dims=[128, 256, 256, 256, 128], output_dim=d_output).to(device)
     objective = InfoNceLossAdjusted(tau)
-    h = lambda latent: f(latent)
-    optimizer = torch.optim.Adam(f.parameters(), lr=0.001)
+    # Composition: sphere data -> g (InjectiveLinearDecoder 3D→7D) -> f (LinearEncoder 7D→3D) 
+    h = lambda latent: f(g(latent))
+    optimizer = torch.optim.Adam(f.parameters(), lr=0.001)  # Only optimize f, g is fixed
     
     sample_pair_fixed = lambda batch: sample_pair_with_fixed_dimension(batch, d_fix)
     
@@ -112,7 +119,7 @@ def train_model(constraint_ratio, run_id=0, verbose=False):
 
         z_enc = h(z.to(device))
         z_enc_sim = h(z_aug.to(device))
-        z_enc_neg = h(negs.to(device).reshape(-1, 3)).reshape(batch_size, neg_samples, 3)
+        z_enc_neg = h(negs.to(device).reshape(-1, d_input)).reshape(batch_size, neg_samples, d_output)
 
         loss = objective(z_enc, z_enc_sim, z_enc_neg)
         loss.backward()
@@ -140,7 +147,7 @@ def train_model(constraint_ratio, run_id=0, verbose=False):
         # Final loss
         negs_test = sample_negative_samples(z_test, neg_samples, constraint_ratio)
         z_enc_sim_test = h(z_aug_test.to(device))
-        z_enc_neg_test = h(negs_test.to(device).reshape(-1, 3)).reshape(test_batch_size, neg_samples, 3)
+        z_enc_neg_test = h(negs_test.to(device).reshape(-1, d_input)).reshape(test_batch_size, neg_samples, d_output)
         final_loss = objective(z_enc_test, z_enc_sim_test, z_enc_neg_test)
     
     return {
@@ -170,6 +177,8 @@ summary_file = os.path.join(results_dir, f"constraint_ratio_summary_{timestamp}.
 print("🚀 Starting Constraint Ratio Experiment (5 runs per ratio)")
 print(f"Device: {device}, Batch size: {batch_size}, Iterations: {iterations}")
 print(f"Temperature: {tau}, Fixed dimensions: {d_fix}, Negative samples: {neg_samples}")
+print(f"Architecture: 3D sphere → InjectiveLinearDecoder({d_input}→{d_intermediate}) → LinearEncoder({d_intermediate}→{d_output})")
+print(f"Training setup: f (LinearEncoder) reinitialized each run, g (InjectiveLinearDecoder) shared across all {len(constraint_ratios) * n_runs} experiments")
 print(f"Estimated time: ~{len(constraint_ratios) * n_runs * 2:.0f} minutes")
 print(f"📁 Results will be saved to: {results_file}")
 
@@ -191,9 +200,14 @@ experiment_metadata = {
     "iterations": iterations,
     "temperature": tau,
     "d_fix": d_fix,
+    "d_input": d_input,
+    "d_intermediate": d_intermediate,
+    "d_output": d_output,
     "neg_samples": neg_samples,
     "constraint_ratios": constraint_ratios,
     "n_runs": n_runs,
+    "architecture": f"3D sphere → InjectiveLinearDecoder({d_input}→{d_intermediate}) → LinearEncoder({d_intermediate}→{d_output})",
+    "training_setup": "f (LinearEncoder) reinitialized each run, g (InjectiveLinearDecoder) shared across all experiments",
     "results": []
 }
 

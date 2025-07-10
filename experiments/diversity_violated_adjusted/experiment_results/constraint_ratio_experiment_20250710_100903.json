@@ -1,0 +1,108 @@
+{
+  "timestamp": "20250710_100903",
+  "device": "cuda",
+  "batch_size": 2000,
+  "iterations": 5000,
+  "temperature": 0.3,
+  "d_fix": 1,
+  "d_input": 3,
+  "d_intermediate": 7,
+  "d_output": 3,
+  "neg_samples": 2000,
+  "constraint_ratios": [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "n_runs": 5,
+  "architecture": "3D sphere \u2192 InjectiveLinearDecoder(3\u21927) \u2192 LinearEncoder(7\u21923)",
+  "training_setup": "f (LinearEncoder) reinitialized each run, g (InjectiveLinearDecoder) shared across all experiments",
+  "results": [
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 0,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.0030879180412739515,
+        "perm_score": 0.04019069982426264,
+        "angle_error": 0.333065390586853,
+        "final_loss": 5.705212593078613
+      },
+      "run_time_seconds": 2891.097682952881,
+      "timestamp": "2025-07-10T10:57:14.590856"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 1,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.3300533592700958,
+        "perm_score": 0.23793618075866454,
+        "angle_error": 0.25329694151878357,
+        "final_loss": 5.705665111541748
+      },
+      "run_time_seconds": 2813.9275362491608,
+      "timestamp": "2025-07-10T11:44:08.518692"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 2,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.02989981509745121,
+        "perm_score": 0.10520730056566002,
+        "angle_error": 0.3327754735946655,
+        "final_loss": 5.706919193267822
+      },
+      "run_time_seconds": 2820.561062812805,
+      "timestamp": "2025-07-10T12:31:09.080227"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 3,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.19478298723697662,
+        "perm_score": 0.2016359909209053,
+        "angle_error": 0.2961544394493103,
+        "final_loss": 5.706434726715088
+      },
+      "run_time_seconds": 3158.706540584564,
+      "timestamp": "2025-07-10T13:23:47.787114"
+    },
+    {
+      "constraint_ratio": 0.0,
+      "run_id": 4,
+      "result": {
+        "constraint_ratio": 0.0,
+        "linear_score": 0.0035730202216655016,
+        "perm_score": 0.03788677787765046,
+        "angle_error": 0.3329471945762634,
+        "final_loss": 5.706851959228516
+      },
+      "run_time_seconds": 3201.930078983307,
+      "timestamp": "2025-07-10T14:17:09.717535"
+    },
+    {
+      "constraint_ratio": 0.1,
+      "run_id": 0,
+      "result": {
+        "constraint_ratio": 0.1,
+        "linear_score": 0.2809033691883087,
+        "perm_score": 0.32953637905675487,
+        "angle_error": 0.27129417657852173,
+        "final_loss": 6.059355735778809
+      },
+      "run_time_seconds": 2856.883537530899,
+      "timestamp": "2025-07-10T15:04:46.601872"
+    }
+  ]
+}

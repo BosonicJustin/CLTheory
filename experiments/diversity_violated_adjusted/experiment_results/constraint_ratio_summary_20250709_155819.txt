@@ -1,0 +1,19 @@
+Constraint Ratio Experiment Results
+Generated: 2025-07-09T19:01:12.521535
+Experiment timestamp: 20250709_155819
+
+COMPLETED RATIOS:
+--------------------------------------------------
+Ratio 0.0: Linear 0.994±0.000, Perm 0.783±0.033
+Ratio 0.1: Linear 0.997±0.000, Perm 0.809±0.032
+Ratio 0.2: Linear 0.999±0.000, Perm 0.848±0.052
+Ratio 0.3: Linear 1.000±0.000, Perm 0.857±0.082
+Ratio 0.4: Linear 1.000±0.000, Perm 0.770±0.090
+Ratio 0.5: Linear 0.997±0.000, Perm 0.800±0.054
+Ratio 0.6: Linear 0.991±0.000, Perm 0.781±0.056
+Ratio 0.7: Linear 0.980±0.001, Perm 0.832±0.071
+Ratio 0.8: Linear 0.958±0.001, Perm 0.848±0.086
+Ratio 0.9: Linear 0.908±0.003, Perm 0.709±0.037
+Ratio 1.0: Linear 0.742±0.066, Perm 0.639±0.022
+
+✅ EXPERIMENT COMPLETE!
