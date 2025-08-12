@@ -184,3 +184,11 @@ saved_transforms/
 *.pth
 data/*.tar.gz
 data/cifar-10-batches-py/
+
+*.pdf
+
+.DS_Store
+*.jpg
+
+cifar_10_data/
+*.tex
