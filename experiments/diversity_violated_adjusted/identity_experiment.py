@@ -5,8 +5,8 @@ sys.path.append(os.path.join(os.path.dirname(os.getcwd()), '..'))
 import torch
 from torch import nn
 from torch import functional as F
-from encoders import SphericalEncoder, LinearEncoder
-from data.generation import InjectiveLinearDecoder
+from encoders import SphericalEncoder, LinearEncoder, InverseSpiralEncoder, InversePatchesEncoder
+from data.generation import InjectiveLinearDecoder, SpiralRotation, Patches
 from spaces import NSphereSpace
 from visualization_utils.spheres import visualize_spheres_side_by_side, scatter3d_sphere
 import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ sub_sphere = NSphereSpace(2)
 
 d_fix = 1
 d_input = 3  # Input dimension (from sphere)
-d_intermediate = 7  # Intermediate dimension (after g, before f)
+d_intermediate = 3  # Intermediate dimension (after g, before f) - Patches outputs 3D
 d_output = 3  # Final output dimension (after f)
 tau = 0.3
 kappa = 1 / tau
@@ -29,9 +29,9 @@ neg_samples = 2000
 iterations = 5000  # Reduced for faster experimentation
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Initialize InjectiveLinearDecoder ONCE - reused for all experiments (3D → 7D)
-g = InjectiveLinearDecoder(latent_dim=d_input, output_dim=d_intermediate).to(device)
-print(f"🔧 Initialized shared InjectiveLinearDecoder: {d_input}D → {d_intermediate}D")
+# Initialize Patches ONCE - reused for all experiments (3D → 3D)
+g = Patches(slice_number=4, device=device)
+print(f"🔧 Initialized shared Patches: {d_input}D → {d_intermediate}D")
 
 def sample_negative_samples(Z, M, constraint_ratio):
     """
@@ -102,10 +102,11 @@ class InfoNceLossAdjusted(nn.Module):
 def train_model(constraint_ratio, run_id=0, verbose=False):
     """Train model with given constraint ratio and return final metrics"""
     
-    # Initialize fresh LinearEncoder for each experiment (f is reinitialized)
+    # Initialize fresh InversePatchesEncoder for each experiment (f is reinitialized)
+    # f = InversePatchesEncoder(input_dim=d_intermediate, latent_dim=d_output, slice_number=4).to(device)
     f = SphericalEncoder(input_dim=d_intermediate, hidden_dims=[128, 256, 256, 256, 128], output_dim=d_output).to(device)
     objective = InfoNceLossAdjusted(tau)
-    # Composition: sphere data -> g (InjectiveLinearDecoder 3D→7D) -> f (LinearEncoder 7D→3D) 
+    # Composition: sphere data -> g (Patches 3D→3D) -> f (InversePatchesEncoder 3D→3D) 
     h = lambda latent: f(g(latent))
     optimizer = torch.optim.Adam(f.parameters(), lr=0.001)  # Only optimize f, g is fixed
     
@@ -177,8 +178,8 @@ summary_file = os.path.join(results_dir, f"constraint_ratio_summary_{timestamp}.
 print("🚀 Starting Constraint Ratio Experiment (5 runs per ratio)")
 print(f"Device: {device}, Batch size: {batch_size}, Iterations: {iterations}")
 print(f"Temperature: {tau}, Fixed dimensions: {d_fix}, Negative samples: {neg_samples}")
-print(f"Architecture: 3D sphere → InjectiveLinearDecoder({d_input}→{d_intermediate}) → LinearEncoder({d_intermediate}→{d_output})")
-print(f"Training setup: f (LinearEncoder) reinitialized each run, g (InjectiveLinearDecoder) shared across all {len(constraint_ratios) * n_runs} experiments")
+print(f"Architecture: 3D sphere → Patches({d_input}→{d_intermediate}) → InversePatchesEncoder({d_intermediate}→{d_output})")
+print(f"Training setup: f (InversePatchesEncoder) reinitialized each run, g (Patches) shared across all {len(constraint_ratios) * n_runs} experiments")
 print(f"Estimated time: ~{len(constraint_ratios) * n_runs * 2:.0f} minutes")
 print(f"📁 Results will be saved to: {results_file}")
 
@@ -206,8 +207,8 @@ experiment_metadata = {
     "neg_samples": neg_samples,
     "constraint_ratios": constraint_ratios,
     "n_runs": n_runs,
-    "architecture": f"3D sphere → InjectiveLinearDecoder({d_input}→{d_intermediate}) → LinearEncoder({d_intermediate}→{d_output})",
-    "training_setup": "f (LinearEncoder) reinitialized each run, g (InjectiveLinearDecoder) shared across all experiments",
+    "architecture": f"3D sphere → Patches({d_input}→{d_intermediate}) → InversePatchesEncoder({d_intermediate}→{d_output})",
+    "training_setup": "f (InversePatchesEncoder) reinitialized each run, g (Patches) shared across all experiments",
     "results": []
 }
 
