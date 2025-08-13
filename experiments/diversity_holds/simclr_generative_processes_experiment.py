@@ -74,7 +74,15 @@ def initialize_generative_processes():
         'description': '3D sphere → 3D invertible MLP'
     }
     
-    print("🏗️  Initialized 4 generative processes:")
+    # 5. Identity: 3D -> 3D
+    processes['identity'] = {
+        'name': 'Identity',
+        'model': torch.nn.Identity(),
+        'input_dim': 3,
+        'description': '3D sphere → 3D identity (no transformation)'
+    }
+    
+    print("🏗️  Initialized 5 generative processes:")
     for key, proc in processes.items():
         print(f"  • {proc['name']}: {proc['description']}")
     
@@ -169,14 +177,14 @@ def main():
     print(f"Device: {device}, Batch size: {batch_size}, Iterations: {iterations}")
     print(f"Temperature: {tau}, Kappa: {kappa}")
     print(f"Sampling: VMF pairs + Uniform negatives (same as diversity_holds)")
-    print(f"Total experiments: 4 processes × {n_runs} runs = {4 * n_runs}")
+    print(f"Total experiments: 5 processes × {n_runs} runs = {5 * n_runs}")
     
     # Create results directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_dir = "experiment_results"
     os.makedirs(results_dir, exist_ok=True)
     
-    results_file = os.path.join(results_dir, f"simclr_generative_processes_{timestamp}.csv")
+    results_file = os.path.join(results_dir, f"diversity_holds_generative_processes_{timestamp}.csv")
     
     print(f"📁 Results will be saved to: {results_file}")
     print("=" * 80)
@@ -235,7 +243,7 @@ def main():
     print(summary)
     
     # Save final summary
-    summary_file = os.path.join(results_dir, f"simclr_generative_processes_summary_{timestamp}.csv")
+    summary_file = os.path.join(results_dir, f"diversity_holds_generative_processes_summary_{timestamp}.csv")
     summary.to_csv(summary_file)
     
     print(f"\n📁 Final files saved:")
