@@ -1,0 +1,8 @@
+,,linear_score,linear_score,perm_score,perm_score,angle_error,angle_error,final_loss,final_loss,training_time_seconds
+,,mean,std,mean,std,mean,std,mean,std,mean
+process_name,encoder_type,,,,,,,,,
+Identity,LinearEncoder,0.9944,0.0,0.8005,0.1015,0.047,0.0004,6.0581,0.0093,41.8224
+InjectiveLinearDecoder,LinearEncoder,0.9945,0.0001,0.8412,0.0936,0.0462,0.0003,6.0432,0.0091,54.2395
+InvertibleMLP,SphericalEncoder,0.2645,0.1411,0.2482,0.1046,0.2717,0.0352,5.7174,0.0032,75.56
+Patches,InversePatchesEncoder,0.8798,0.0062,0.6865,0.0142,0.1085,0.0027,6.2218,0.0069,204.9647
+SpiralRotation,InverseSpiralEncoder,0.9983,0.0004,0.9989,0.0005,0.0157,0.0027,6.0751,0.0141,64.3509

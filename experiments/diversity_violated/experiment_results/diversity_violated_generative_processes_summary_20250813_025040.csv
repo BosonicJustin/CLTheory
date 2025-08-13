@@ -1,0 +1,8 @@
+,linear_score,linear_score,perm_score,perm_score,angle_error,angle_error,final_loss,final_loss,training_time_seconds
+,mean,std,mean,std,mean,std,mean,std,mean
+process_name,,,,,,,,,
+Identity,0.064,0.0305,0.1426,0.0156,0.3224,0.0068,5.7086,0.0002,41.7323
+InjectiveLinearDecoder,0.0534,0.0623,0.1108,0.0752,0.3252,0.0124,5.7081,0.0007,41.6523
+InvertibleMLP,0.1345,0.1339,0.1779,0.1161,0.305,0.0339,5.7149,0.0015,42.927
+Patches,0.2531,0.0347,0.2646,0.018,0.2829,0.0079,5.8501,0.0209,67.4034
+SpiralRotation,0.723,0.3647,0.6289,0.2943,0.1359,0.1148,5.9491,0.1396,43.4221
