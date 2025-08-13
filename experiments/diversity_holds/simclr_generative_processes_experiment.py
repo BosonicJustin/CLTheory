@@ -28,7 +28,7 @@ latent_dim = 3
 tau = 0.3
 kappa = 1 / tau
 batch_size = 2000
-iterations = 5000
+iterations = 100
 n_runs = 5
 
 # Initialize sphere space - same as diversity_holds
@@ -53,7 +53,7 @@ def initialize_generative_processes():
     # 2. Patches: 3D -> 3D
     processes['patches'] = {
         'name': 'Patches', 
-        'model': Patches(slice_number=4),
+        'model': Patches(slice_number=4, device='cpu'),
         'input_dim': 3,
         'description': '3D sphere → 3D patches transformation'
     }
@@ -61,15 +61,15 @@ def initialize_generative_processes():
     # 3. SpiralRotation: 3D -> 3D
     processes['spiral'] = {
         'name': 'SpiralRotation',
-        'model': SpiralRotation(),
+        'model': SpiralRotation(2),
         'input_dim': 3,
         'description': '3D sphere → 3D spiral rotation'
     }
-    
+
     # 4. Invertible MLP: 3D -> 3D
     processes['invertible_mlp'] = {
         'name': 'InvertibleMLP',
-        'model': construct_invertible_mlp(input_dim=3, hidden_dim=64, num_layers=3),
+        'model': construct_invertible_mlp(n=3, n_layers=3, act_fct="leaky_relu"),
         'input_dim': 3,
         'description': '3D sphere → 3D invertible MLP'
     }
@@ -99,6 +99,10 @@ def train_simclr_for_process(process_info, run_id, verbose=False):
         hidden_dims=[128, 256, 256, 256, 128], 
         output_dim=3  # Always output to 3D sphere
     ).to(device)
+
+    # For Patches, also update the internal device parameter
+    if hasattr(g_model, 'device'):
+        g_model.device = device
     
     # Initialize SimCLR - same as diversity_holds experiments
     simclr = SimCLR(
