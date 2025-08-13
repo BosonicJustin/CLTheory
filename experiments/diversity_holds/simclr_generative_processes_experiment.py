@@ -45,7 +45,7 @@ def initialize_generative_processes():
     # 1. InjectiveLinearDecoder: 3D -> 7D
     processes['linear'] = {
         'name': 'InjectiveLinearDecoder',
-        'model': InjectiveLinearDecoder(latent_dim=3, data_dimension=7),
+        'model': InjectiveLinearDecoder(latent_dim=3, output_dim=7),
         'input_dim': 7,  # What the encoder will receive
         'description': '3D sphere → 7D linear transformation'
     }
