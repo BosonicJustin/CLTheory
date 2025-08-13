@@ -166,7 +166,14 @@ def train_simclr_for_process_with_invertible_encoder(process_info, run_id, verbo
         'perm_score': perm_score, 
         'angle_error': angle_error,
         'final_loss': final_loss,
-        'training_time_seconds': training_time
+        'training_time_seconds': training_time,
+        # Historical metrics from training
+        'historical_linear_scores': scores['linear_scores'],
+        'historical_perm_scores': scores['perm_scores'], 
+        'historical_angle_errors': scores['angle_preservation_errors'],
+        'historical_losses': scores['eval_losses'],
+        'historical_pos_losses': scores['eval_pos_losses'],
+        'historical_neg_losses': scores['eval_neg_losses']
     }
     
     print(f"   ✅ Results: Linear={linear_score:.3f}, Perm={perm_score:.3f}, Angle={angle_error:.3f}, Loss={final_loss:.3f} ({training_time:.1f}s)")
@@ -249,9 +256,63 @@ def main():
     summary_file = os.path.join(results_dir, f"diversity_holds_invertible_encoders_summary_{timestamp}.csv")
     summary.to_csv(summary_file)
     
+    # Compute and save averages across all runs
+    print("\n📊 Computing averages across all runs...")
+    averages_data = []
+    for process_key, process_info in processes.items():
+        process_results = [r for r in all_results if r['process_name'] == process_info['name']]
+        
+        # Collect all historical metrics across runs
+        all_historical_linear = []
+        all_historical_perm = []
+        all_historical_angle = []
+        all_historical_losses = []
+        
+        for result in process_results:
+            all_historical_linear.extend(result['historical_linear_scores'])
+            all_historical_perm.extend(result['historical_perm_scores'])
+            all_historical_angle.extend(result['historical_angle_errors'])
+            all_historical_losses.extend(result['historical_losses'])
+        
+        encoder_type = process_results[0]['encoder_type'] if process_results else 'Unknown'
+        
+        averages_data.append({
+            'process_name': process_info['name'],
+            'encoder_type': encoder_type,
+            'avg_final_linear': np.mean([r['linear_score'] for r in process_results]),
+            'std_final_linear': np.std([r['linear_score'] for r in process_results]),
+            'avg_final_perm': np.mean([r['perm_score'] for r in process_results]),
+            'std_final_perm': np.std([r['perm_score'] for r in process_results]),
+            'avg_final_angle': np.mean([r['angle_error'] for r in process_results]),
+            'std_final_angle': np.std([r['angle_error'] for r in process_results]),
+            'avg_final_loss': np.mean([r['final_loss'] for r in process_results]),
+            'std_final_loss': np.std([r['final_loss'] for r in process_results]),
+            'avg_historical_linear': np.mean(all_historical_linear) if all_historical_linear else 0,
+            'avg_historical_perm': np.mean(all_historical_perm) if all_historical_perm else 0,
+            'avg_historical_angle': np.mean(all_historical_angle) if all_historical_angle else 0,
+            'avg_historical_loss': np.mean(all_historical_losses) if all_historical_losses else 0,
+            'num_runs': len(process_results),
+            'total_training_time': sum([r['training_time_seconds'] for r in process_results])
+        })
+    
+    # Save averages
+    averages_df = pd.DataFrame(averages_data)
+    averages_file = os.path.join(results_dir, f"diversity_holds_invertible_encoders_averages_{timestamp}.csv")
+    averages_df.to_csv(averages_file, index=False)
+    
+    print("\n📊 PROCESS AVERAGES (Invertible Encoders):")
+    print("-" * 80)
+    for avg_data in averages_data:
+        print(f"{avg_data['process_name']} ({avg_data['encoder_type']}):")
+        print(f"  Final: Linear={avg_data['avg_final_linear']:.3f}±{avg_data['std_final_linear']:.3f}, "
+              f"Perm={avg_data['avg_final_perm']:.3f}±{avg_data['std_final_perm']:.3f}")
+        print(f"  Historical Avg: Linear={avg_data['avg_historical_linear']:.3f}, "
+              f"Perm={avg_data['avg_historical_perm']:.3f}")
+    
     print(f"\n📁 Final files saved:")
     print(f"  • Raw results: {results_file}")
     print(f"  • Summary: {summary_file}")
+    print(f"  • Averages: {averages_file}")
     print("=" * 80)
 
 if __name__ == "__main__":
