@@ -36,8 +36,8 @@ d_fixed_values = list(range(0, 11))  # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # Pre-initialize all sphere spaces once (efficient!)
 full_sphere_10d = NSphereSpace(10)
-sub_spheres = {}  # Cache sub-spheres by dimension (only for ≥3D, handle 1D/2D separately)
-for remaining_dims in range(3, latent_dim + 1):
+sub_spheres = {}  # Cache sub-spheres by dimension (only for ≥2D, handle 1D separately)
+for remaining_dims in range(2, latent_dim + 1):
     sub_spheres[remaining_dims] = NSphereSpace(remaining_dims)
 
 def sample_conditional_10d_fixed(z, batch, u_dim):
@@ -60,22 +60,8 @@ def sample_conditional_10d_fixed(z, batch, u_dim):
             v_norm = torch.nn.functional.normalize(v, dim=-1, p=2)
             # Simple approach: sample uniformly on 1D sphere (just ±1)
             aug_samples_v = torch.sign(torch.randn(batch, 1, device=z.device)) * torch.norm(v, p=2, dim=-1, keepdim=True)
-        elif remaining_dims == 2:
-            # 2D case - use direct sampling to avoid numerical issues
-            v_norm = torch.nn.functional.normalize(v, dim=-1, p=2)
-            # For 2D, can use simpler sampling
-            angles = torch.randn(batch, 1, device=z.device) * (2.0 / kappa)  # Adjust concentration
-            cos_angles = torch.cos(angles)
-            sin_angles = torch.sin(angles)
-            v_magnitude = torch.norm(v, p=2, dim=-1, keepdim=True)
-            
-            # Rotate v by the sampled angle
-            aug_samples_v = torch.cat([
-                cos_angles * v_norm[:, :1] - sin_angles * v_norm[:, 1:2],
-                sin_angles * v_norm[:, :1] + cos_angles * v_norm[:, 1:2]
-            ], dim=1) * v_magnitude
         else:
-            # Standard case: use sub-sphere VMF sampling
+            # Standard case: use sub-sphere VMF sampling (works fine for 2D, 3D, ...)
             sub_sphere = sub_spheres[remaining_dims]
             v_norm = torch.nn.functional.normalize(v, dim=-1, p=2)
             aug_samples_v = sub_sphere.von_mises_fisher(v_norm, kappa, batch) * torch.norm(v, p=2, dim=-1, keepdim=True)
