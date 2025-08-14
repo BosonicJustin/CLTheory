@@ -122,7 +122,8 @@ def train_simclr_for_d_fixed(process_info, d_fixed, run_id, verbose=False):
         output_dim=10  # Output to 10D sphere
     ).to(device)
     
-    print(f"   Encoder: {encoder_input_dim}D → {f_model.hidden_dims} → 10D ({sum(p.numel() for p in f_model.parameters())} params)")
+    hidden_dims_str = "[512,1024,1024,512,256,128,64,32]"
+    print(f"   Encoder: {encoder_input_dim}D → {hidden_dims_str} → 10D ({sum(p.numel() for p in f_model.parameters())} params)")
     
     # Initialize SimCLR
     simclr = SimCLR(
