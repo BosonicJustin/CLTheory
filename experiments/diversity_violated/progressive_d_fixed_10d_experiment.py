@@ -93,28 +93,28 @@ def sample_uniform_10d(batch):
     return full_sphere_10d.uniform(batch)
 
 def initialize_10d_70d_processes():
-    """Initialize the 2 generative processes: InjectiveLinearDecoder and MonomialEmbedding"""
+    """Initialize the 2 generative processes ONCE: InjectiveLinearDecoder and MonomialEmbedding"""
     processes = {}
     
-    # 1. InjectiveLinearDecoder: 10D -> 70D 
+    # 1. InjectiveLinearDecoder: 10D -> 70D (FIXED WEIGHTS - initialized once!)
     linear_decoder = InjectiveLinearDecoder(latent_dim=10, output_dim=70)
     processes['injective_linear'] = {
         'name': 'InjectiveLinearDecoder_10D_70D',
         'model': linear_decoder,
         'input_dim': 70,
-        'description': '10D sphere → 70D injective linear transformation'
+        'description': '10D sphere → 70D injective linear transformation (FIXED WEIGHTS)'
     }
     
-    # 2. MonomialEmbedding: 10D -> 70D (degree 7: 10*7=70)
+    # 2. MonomialEmbedding: 10D -> 70D (DETERMINISTIC - no random weights)
     monomial_embedding = MonomialEmbedding(latent_dim=10, max_degree=7)
     processes['monomial'] = {
         'name': 'MonomialEmbedding_10D_70D',
         'model': monomial_embedding, 
         'input_dim': 70,
-        'description': '10D sphere → 70D monomial embedding (degree 7)'
+        'description': '10D sphere → 70D monomial embedding (DETERMINISTIC)'
     }
     
-    print("🏗️  Initialized 2 generative processes for 10D → 70D:")
+    print("🏗️  Initialized 2 generative processes for 10D → 70D (CONTROLLED EXPERIMENT):")
     for key, proc in processes.items():
         print(f"  • {proc['name']}: {proc['description']}")
     
@@ -251,20 +251,8 @@ def main():
             
             d_fixed_results = []
             for run in range(n_runs):
-                # Create fresh copy of the model for each run to avoid state contamination
-                if process_key == 'injective_linear':
-                    fresh_model = InjectiveLinearDecoder(latent_dim=10, output_dim=70)
-                else:  # monomial
-                    fresh_model = MonomialEmbedding(latent_dim=10, max_degree=7)
-                
-                fresh_process_info = {
-                    'name': process_info['name'],
-                    'model': fresh_model,
-                    'input_dim': process_info['input_dim'],
-                    'description': process_info['description']
-                }
-                
-                result = train_simclr_for_d_fixed(fresh_process_info, d_fixed, run, verbose=True)
+                # Use the SAME decoder for all runs/d_fixed values (controlled experiment!)
+                result = train_simclr_for_d_fixed(process_info, d_fixed, run, verbose=True)
                 d_fixed_results.append(result)
                 all_results.append(result)
                 
