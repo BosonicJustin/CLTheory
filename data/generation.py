@@ -148,3 +148,66 @@ class Patches(torch.nn.Module):
         
         # Clamp to handle floating-point precision errors
         return torch.clamp(result, min=-1.0, max=1.0).to(self.device)
+
+
+class MonomialEmbedding(nn.Module):
+    """
+    Fast batch-processing monomial embedding: (x1,...,xd) -> (x1, x1^2, ..., x1^max_degree, x2, x2^2, ..., x2^max_degree, ...)
+    
+    Maps from d-dimensional sphere to d*max_degree dimensional space.
+    Example: 10D -> 70D with max_degree=7
+    """
+    def __init__(self, latent_dim, max_degree=7):
+        super(MonomialEmbedding, self).__init__()
+        
+        self.latent_dim = latent_dim
+        self.max_degree = max_degree
+        self.output_dim = latent_dim * max_degree
+        
+        # Pre-compute degree powers for efficiency (1, 2, 3, ..., max_degree)
+        self.register_buffer('degrees', torch.arange(1, max_degree + 1, dtype=torch.float32))
+    
+    def forward(self, z):
+        """
+        Args:
+            z: (batch_size, latent_dim) tensor from sphere
+        
+        Returns:
+            (batch_size, latent_dim * max_degree) tensor with monomial features
+        """
+        batch_size = z.shape[0]
+        
+        # Vectorized computation: z.unsqueeze(-1) ** degrees.unsqueeze(0).unsqueeze(0)
+        # z: (batch_size, latent_dim) -> (batch_size, latent_dim, 1)
+        # degrees: (max_degree,) -> (1, 1, max_degree)
+        z_expanded = z.unsqueeze(-1)  # (batch_size, latent_dim, 1)
+        degrees_expanded = self.degrees.unsqueeze(0).unsqueeze(0)  # (1, 1, max_degree)
+        
+        # Compute all powers at once: (batch_size, latent_dim, max_degree)
+        powers = z_expanded ** degrees_expanded
+        
+        # Reshape to interleave coordinates: (batch_size, latent_dim * max_degree)
+        # Result: [x1^1, x1^2, ..., x1^max_degree, x2^1, x2^2, ..., x2^max_degree, ...]
+        result = powers.reshape(batch_size, -1)
+        
+        return result
+    
+    def get_feature_names(self):
+        """Returns list of feature names for interpretability"""
+        names = []
+        for i in range(self.latent_dim):
+            for degree in range(1, self.max_degree + 1):
+                names.append(f'x{i+1}^{degree}')
+        return names
+
+
+class MonomialEmbedding10D70D(MonomialEmbedding):
+    """Convenience class for 10D -> 70D monomial embedding (degree 7)"""
+    def __init__(self):
+        super(MonomialEmbedding10D70D, self).__init__(latent_dim=10, max_degree=7)
+
+
+class MonomialEmbedding3D21D(MonomialEmbedding):
+    """Convenience class for 3D -> 21D monomial embedding (degree 7)"""
+    def __init__(self):
+        super(MonomialEmbedding3D21D, self).__init__(latent_dim=3, max_degree=7)
