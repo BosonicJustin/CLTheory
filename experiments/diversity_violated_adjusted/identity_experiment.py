@@ -31,7 +31,10 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Initialize Patches ONCE - reused for all experiments (3D → 3D)
 g = Patches(slice_number=4, device=device)
-print(f"🔧 Initialized shared Patches: {d_input}D → {d_intermediate}D")
+g = torch.compile(g)  # Compile for 20-40% speedup since g is never updated
+# Warm up compilation
+_ = g(torch.randn(100, 3, device=device))
+print(f"🔧 Initialized and compiled shared Patches: {d_input}D → {d_intermediate}D")
 
 def sample_negative_samples(Z, M, constraint_ratio):
     """
@@ -105,6 +108,7 @@ def train_model(constraint_ratio, run_id=0, verbose=False):
     # Initialize fresh InversePatchesEncoder for each experiment (f is reinitialized)
     # f = InversePatchesEncoder(input_dim=d_intermediate, latent_dim=d_output, slice_number=4).to(device)
     f = SphericalEncoder(input_dim=d_intermediate, hidden_dims=[128, 256, 256, 256, 128], output_dim=d_output).to(device)
+    f = torch.compile(f)  # Compile f for 20-40% speedup during training
     objective = InfoNceLossAdjusted(tau)
     # Composition: sphere data -> g (Patches 3D→3D) -> f (InversePatchesEncoder 3D→3D) 
     h = lambda latent: f(g(latent))
@@ -112,7 +116,10 @@ def train_model(constraint_ratio, run_id=0, verbose=False):
     
     sample_pair_fixed = lambda batch: sample_pair_with_fixed_dimension(batch, d_fix)
     
-    # Training loop
+    # Training loop with timing
+    segment_times = []  # Track time for each 500-iteration segment
+    segment_start = time.time()
+    
     for i in range(iterations):
         optimizer.zero_grad()
         z, z_aug = sample_pair_fixed(batch_size)
@@ -120,14 +127,33 @@ def train_model(constraint_ratio, run_id=0, verbose=False):
 
         z_enc = h(z.to(device))
         z_enc_sim = h(z_aug.to(device))
-        z_enc_neg = h(negs.to(device).reshape(-1, d_input)).reshape(batch_size, neg_samples, d_output)
+        # More efficient negative processing - use view instead of reshape
+        negs_flat = negs.contiguous().view(-1, d_input).to(device)
+        z_enc_neg = h(negs_flat).view(batch_size, neg_samples, d_output)
 
         loss = objective(z_enc, z_enc_sim, z_enc_neg)
         loss.backward()
         optimizer.step()
 
-        if i % 100 == 0:
-            print(f"    Run {run_id+1}, Iteration {i}: Loss: {loss.item():.4f}")
+        if i % 500 == 0:  # Reduced print frequency for speed
+            # Calculate segment timing
+            segment_time = time.time() - segment_start
+            segment_times.append(segment_time)
+            
+            # Calculate moving average and estimate remaining time
+            if len(segment_times) >= 3:
+                avg_segment_time = sum(segment_times[-3:]) / 3  # Last 3 segments
+            else:
+                avg_segment_time = sum(segment_times) / len(segment_times)  # All available segments
+            
+            remaining_segments = (iterations - i) // 500
+            estimated_remaining = avg_segment_time * remaining_segments / 60  # minutes
+            
+            print(f"    Run {run_id+1}, Iteration {i}: Loss: {loss.item():.4f} | Segment: {segment_time:.1f}s | Avg: {avg_segment_time:.1f}s | Est. remaining: {estimated_remaining:.1f}min")
+            
+            # Reset for next segment
+            if i < iterations - 500:  # Don't reset on last segment
+                segment_start = time.time()
     
     # Final evaluation
     f.eval()
@@ -148,7 +174,7 @@ def train_model(constraint_ratio, run_id=0, verbose=False):
         # Final loss
         negs_test = sample_negative_samples(z_test, neg_samples, constraint_ratio)
         z_enc_sim_test = h(z_aug_test.to(device))
-        z_enc_neg_test = h(negs_test.to(device).reshape(-1, d_input)).reshape(test_batch_size, neg_samples, d_output)
+        z_enc_neg_test = h(negs_test.contiguous().view(-1, d_input).to(device)).view(test_batch_size, neg_samples, d_output)
         final_loss = objective(z_enc_test, z_enc_sim_test, z_enc_neg_test)
     
     return {
