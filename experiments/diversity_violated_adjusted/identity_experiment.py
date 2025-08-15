@@ -29,6 +29,10 @@ neg_samples = 2000
 iterations = 5000  # Reduced for faster experimentation
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# Enable TensorFloat32 for faster matrix operations on modern GPUs
+if device == 'cuda':
+    torch.set_float32_matmul_precision('high')
+
 # Initialize Patches ONCE - reused for all experiments (3D → 3D)
 g = Patches(slice_number=4, device=device)
 g = torch.compile(g)  # Compile for 20-40% speedup since g is never updated
