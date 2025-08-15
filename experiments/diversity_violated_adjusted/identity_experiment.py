@@ -102,6 +102,54 @@ class InfoNceLossAdjusted(nn.Module):
 
         return neg_similarities.mean() - pos_similarities.mean()
 
+def profile_bottlenecks():
+    """Quick profiling to identify bottlenecks - run once before main experiment"""
+    print("🔍 Profiling bottlenecks...")
+    
+    # Use same setup as training
+    f_test = SphericalEncoder(input_dim=d_intermediate, hidden_dims=[128, 256, 256, 256, 128], output_dim=d_output).to(device)
+    f_test = torch.compile(f_test)
+    h_test = lambda latent: f_test(g(latent))
+    
+    # Warm up compilation
+    _ = h_test(torch.randn(100, 3, device=device))
+    
+    # Profile 10 iterations
+    times = {'neg_sampling': [], 'forward': [], 'backward': []}
+    
+    for i in range(10):
+        # Negative sampling
+        start = time.time()
+        z = full_sphere.uniform(batch_size).to(device)
+        z_aug = sample_conditional_with_dims_fixed(z, batch_size, d_fix)
+        negs = sample_negative_samples(z, neg_samples, 0.5)  # Use middle constraint ratio
+        times['neg_sampling'].append(time.time() - start)
+        
+        # Forward pass
+        start = time.time()
+        z_enc = h_test(z)
+        z_enc_sim = h_test(z_aug)
+        negs_flat = negs.contiguous().view(-1, d_input).to(device)
+        z_enc_neg = h_test(negs_flat).view(batch_size, neg_samples, d_output)
+        times['forward'].append(time.time() - start)
+        
+        # Backward pass
+        start = time.time()
+        objective = InfoNceLossAdjusted(tau)
+        loss = objective(z_enc, z_enc_sim, z_enc_neg)
+        loss.backward()
+        times['backward'].append(time.time() - start)
+    
+    # Report averages
+    for phase, timings in times.items():
+        avg_time = sum(timings) / len(timings)
+        print(f"  {phase}: {avg_time:.3f}s avg ({avg_time/sum(sum(times.values(), []))*100:.1f}%)")
+    
+    total_time = sum(sum(times.values(), []))
+    print(f"  Total per iteration: {total_time/10:.3f}s")
+    print(f"  Estimated time for 5000 iterations: {total_time/10 * 5000/60:.1f} minutes")
+    print()
+
 def train_model(constraint_ratio, run_id=0, verbose=False):
     """Train model with given constraint ratio and return final metrics"""
     
@@ -200,6 +248,9 @@ results_dir = "experiment_results"
 os.makedirs(results_dir, exist_ok=True)
 results_file = os.path.join(results_dir, f"constraint_ratio_experiment_{timestamp}.json")
 summary_file = os.path.join(results_dir, f"constraint_ratio_summary_{timestamp}.txt")
+
+# Run quick profiling first
+profile_bottlenecks()
 
 print("🚀 Starting Constraint Ratio Experiment (5 runs per ratio)")
 print(f"Device: {device}, Batch size: {batch_size}, Iterations: {iterations}")
