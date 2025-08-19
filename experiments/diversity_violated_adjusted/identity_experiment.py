@@ -33,12 +33,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device == 'cuda':
     torch.set_float32_matmul_precision('high')
 
-# Initialize Patches ONCE - reused for all experiments (3D → 3D)
-g = Patches(slice_number=4, device=device)
+# Initialize SpiralRotation ONCE - reused for all experiments (3D → 3D)
+g = SpiralRotation(device=device)
 g = torch.compile(g)  # Compile for 20-40% speedup since g is never updated
 # Warm up compilation
 _ = g(torch.randn(100, 3, device=device))
-print(f"🔧 Initialized and compiled shared Patches: {d_input}D → {d_intermediate}D")
+print(f"🔧 Initialized and compiled shared SpiralRotation: {d_input}D → {d_intermediate}D")
 
 def sample_negative_samples(Z, M, constraint_ratio):
     """
