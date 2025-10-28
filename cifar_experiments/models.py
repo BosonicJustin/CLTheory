@@ -28,40 +28,41 @@ class VisionTransformerLayer(nn.Module):
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
 
-        self.self_attention = nn.MultiheadAttention(embed_dim=self.embed_dim, num_heads=self.num_heads)
-
-        # TODO: Look into output dimensions here
-        self.q_proj = nn.Linear(in_features=self.embed_dim, out_features=self.hidden_dim)
-        self.k_proj = nn.Linear(in_features=self.embed_dim, out_features=self.hidden_dim)
-        self.v_proj = nn.Linear(in_features=self.embed_dim, out_features=self.hidden_dim)
+        # MultiheadAttention handles Q, K, V projections internally
+        self.self_attention = nn.MultiheadAttention(embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
 
         self.mlp = MLP(embed_dim=self.embed_dim, hidden_dim=self.hidden_dim, dropout=0.1)
         self.norm1 = nn.LayerNorm(self.embed_dim)
         self.norm2 = nn.LayerNorm(self.embed_dim)
 
     def forward(self, x):
+        # Pre-norm architecture (as in ViT paper)
+        # Self-attention block with residual
         x_normed = self.norm1(x)
-        q = self.q_proj(x_normed)
-        k = self.k_proj(x_normed)
-        v = self.v_proj(x_normed)
+        attn_output, _ = self.self_attention(x_normed, x_normed, x_normed, need_weights=False)
+        x = x + attn_output
 
-        attention_with_residual = self.self_attention(q, k, v, need_weights=False) + x
-        
-        return self.mlp(self.norm2(attention_with_residual)) + attention_with_residual
+        # MLP block with residual
+        x = x + self.mlp(self.norm2(x))
+
+        return x
 
 
 class ViT1x1(nn.Module):
     def __init__(self, img_size=32, embed_dim=256, hidden_dim=512, msa_heads=8, num_layers=6):
         super().__init__()
         self.img_size = img_size
-        self.max_len = img_size * img_size * 3 # 1x1 patches with 3 channels
+        self.num_patches = img_size * img_size  # Number of 1x1 patches (H*W)
         self.embed_dim = embed_dim
         self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        self.msa_heads = msa_heads
         self.patch_size_one = 1
 
-        self.pos_embed = nn.Parameter(torch.zeros(self.patch_size_one, self.max_len, self.embed_dim))
+        # Positional embeddings for N+1 tokens (patches + CLS token)
+        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, self.embed_dim))
         self.cls_token = nn.Parameter(torch.zeros(1, 1, self.embed_dim))
-        self.projection = nn.Linear(in_features=self.patch_size_one, out_features=self.embed_dim)
+        self.projection = nn.Linear(in_features=3, out_features=self.embed_dim)  # Project from C=3 channels to embed_dim
 
         self.layers = nn.ModuleList(
             [VisionTransformerLayer(embed_dim=self.embed_dim, hidden_dim=self.hidden_dim, num_heads=self.msa_heads) for _ in range(self.num_layers)]
@@ -69,12 +70,23 @@ class ViT1x1(nn.Module):
 
     
     def project_patches(self, x):
-        x_flat = x.flatten(start_dim=1)
-        embedded_patches = self.projection(x_flat)
+        # (B, C, H, W) -> (B, N, C) where N = H*W (number of 1x1 patches)
         batch_size = x.shape[0]
-        cls_tokens = self.cls_token.expand(batch_size, -1, -1)
-        embedded_patches = embedded_patches.unsqueeze(1)
-        positional_embedded_patches = torch.cat((cls_tokens, embedded_patches), dim=1) + self.pos_embed
+
+        # Reshape: (B, C, H, W) -> (B, C, H*W) -> (B, H*W, C)
+        x_patches = x.flatten(2).transpose(1, 2)  # (B, N, C) where N = 1024 for 32x32 image
+
+        # Project each patch from C channels to embed_dim
+        embedded_patches = self.projection(x_patches)  # (B, N, embed_dim)
+
+        # Add CLS token
+        cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # (B, 1, embed_dim)
+
+        # Concatenate CLS token with patch embeddings
+        embedded_patches = torch.cat((cls_tokens, embedded_patches), dim=1)  # (B, N+1, embed_dim)
+
+        # Add positional embeddings
+        positional_embedded_patches = embedded_patches + self.pos_embed
 
         return positional_embedded_patches
 
@@ -85,7 +97,7 @@ class ViT1x1(nn.Module):
         for layer in self.layers:
             positional_embedded_patches = layer(positional_embedded_patches)
 
-        return positional_embedded_patches
+        return positional_embedded_patches[:, 0, :]
 
 
 def get_resnet50_model():
@@ -97,7 +109,3 @@ def get_resnet50_model():
     """
     model = models.resnet50(weights=None)
     return model
-
-
-
-

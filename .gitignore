@@ -192,3 +192,5 @@ data/cifar-10-batches-py/
 
 cifar_10_data/
 *.tex
+
+*/data/
