@@ -4,8 +4,13 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import os
 import json
+import sys
 from datetime import datetime
 from tqdm import tqdm
+
+# Add parent directory to path to import from evals
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from evals.knn_eval import run_knn_eval
 
 
 class SimCLRTrainer:
@@ -31,7 +36,10 @@ class SimCLRTrainer:
         device='cuda',
         learning_rate=3e-4,
         weight_decay=1e-4,
-        config=None
+        config=None,
+        val_dataloader_train=None,
+        val_dataloader_test=None,
+        val_freq=10
     ):
         self.model = model.to(device)
         self.temperature = temperature
@@ -39,6 +47,11 @@ class SimCLRTrainer:
         self.save_dir = save_dir
         self.device = device
         self.config = config or {}
+
+        # Validation parameters
+        self.val_dataloader_train = val_dataloader_train
+        self.val_dataloader_test = val_dataloader_test
+        self.val_freq = val_freq
 
         # Create save directory
         os.makedirs(save_dir, exist_ok=True)
@@ -143,6 +156,38 @@ class SimCLRTrainer:
 
         return avg_loss
 
+    def validate(self, epoch):
+        """
+        Run KNN validation on the current model.
+
+        Args:
+            epoch: Current epoch number for logging
+
+        Returns:
+            float: KNN accuracy (0-100)
+        """
+        if self.val_dataloader_train is None or self.val_dataloader_test is None:
+            print("Warning: Validation dataloaders not provided, skipping validation")
+            return None
+
+        self.model.eval()
+
+        print(f"Running KNN validation...")
+        acc = run_knn_eval(
+            self.model,
+            self.val_dataloader_train,
+            self.val_dataloader_test,
+            self.device
+        )
+
+        # Log to TensorBoard
+        self.writer.add_scalar('Validation/knn_accuracy', acc, epoch)
+
+        print(f"[KNN Eval] Epoch {epoch}, Accuracy: {acc:.2f}%")
+
+        self.model.train()
+        return acc
+
     def train(self, num_epochs, save_freq=10):
         """
         Train the model for multiple epochs
@@ -164,6 +209,10 @@ class SimCLRTrainer:
             avg_loss = self.train_epoch(epoch)
 
             print(f"Epoch {epoch}/{num_epochs} - Avg Loss: {avg_loss:.4f}")
+
+            # Run validation
+            if self.val_dataloader_test is not None and (epoch % self.val_freq == 0 or epoch == num_epochs):
+                self.validate(epoch)
 
             # Save checkpoint
             if epoch % save_freq == 0 or epoch == num_epochs:

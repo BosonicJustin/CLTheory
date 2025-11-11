@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 
 from models import ViT1x1, get_resnet50_model
-from data import get_cifar10_dataloader
+from data import get_cifar10_dataloader, get_cifar10_eval_dataloaders
 from simclr import SimCLRTrainer
 from data_transforms import (
     get_permuted_transforms,
@@ -112,6 +112,12 @@ def main():
                        help='Directory to save checkpoints and logs (default: auto-generated)')
     parser.add_argument('--device', type=str, default='cuda',
                        help='Device to use for training (default: cuda)')
+    parser.add_argument('--val-freq', type=int, default=10,
+                       help='Run KNN validation every N epochs (default: 10)')
+    parser.add_argument('--val-batch-size', type=int, default=256,
+                       help='Batch size for validation (default: 256)')
+    parser.add_argument('--no-validation', action='store_true',
+                       help='Disable validation during training')
 
     args = parser.parse_args()
 
@@ -136,6 +142,11 @@ def main():
     print(f"Learning rate: {args.lr}")
     print(f"Weight decay: {args.weight_decay}")
     print(f"Save directory: {args.save_dir}")
+    if not args.no_validation:
+        print(f"Validation: Enabled (every {args.val_freq} epochs)")
+        print(f"Validation batch size: {args.val_batch_size}")
+    else:
+        print("Validation: Disabled")
     print("=" * 80)
 
     # Get model
@@ -165,6 +176,19 @@ def main():
     )
     print(f"Dataset loaded. Number of batches: {len(dataloader)}")
 
+    # Get validation dataloaders
+    val_dataloader_train = None
+    val_dataloader_test = None
+    if not args.no_validation:
+        print("Loading validation datasets...")
+        val_dataloader_train, val_dataloader_test = get_cifar10_eval_dataloaders(
+            root=args.data_root,
+            batch_size=args.val_batch_size,
+            num_workers=1,
+            download=True
+        )
+        print(f"Validation datasets loaded. Train: {len(val_dataloader_train)} batches, Test: {len(val_dataloader_test)} batches")
+
     # Create config dictionary
     config = {
         'model_type': args.model,
@@ -188,7 +212,10 @@ def main():
         device=device,
         learning_rate=args.lr,
         weight_decay=args.weight_decay,
-        config=config
+        config=config,
+        val_dataloader_train=val_dataloader_train,
+        val_dataloader_test=val_dataloader_test,
+        val_freq=args.val_freq
     )
 
     # Train

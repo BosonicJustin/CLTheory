@@ -94,3 +94,62 @@ def get_cifar10_dataloader(root="./data", train=True, transform1=None, transform
 
     return dataloader
 
+
+def get_cifar10_eval_dataloaders(root="./data", batch_size=256, num_workers=4, download=True):
+    """
+    Create DataLoaders for CIFAR10 evaluation (KNN, linear probe, etc.).
+    Returns standard (image, label) tuples with simple transforms (no augmentation).
+
+    Args:
+        root: Directory where the dataset will be saved.
+        batch_size: Batch size for DataLoader
+        num_workers: Number of worker processes for data loading
+        download: If True, downloads the dataset if not already present.
+
+    Returns:
+        tuple: (train_loader, test_loader)
+            - train_loader: DataLoader for training set with (images, labels)
+            - test_loader: DataLoader for test set with (images, labels)
+    """
+    # Simple transform: ToTensor only (for 32x32 images)
+    # Models should expect 32x32 CIFAR-10 images
+    eval_transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+
+    # Training set
+    train_dataset = CIFAR10(
+        root=root,
+        train=True,
+        transform=eval_transform,
+        download=download
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=False,  # No shuffle for consistent evaluation
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=False  # Keep all samples for evaluation
+    )
+
+    # Test set
+    test_dataset = CIFAR10(
+        root=root,
+        train=False,
+        transform=eval_transform,
+        download=download
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=False
+    )
+
+    return train_loader, test_loader
+
