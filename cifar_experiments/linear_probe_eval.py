@@ -95,6 +95,15 @@ class LinearProbeValidator:
         )
         self.criterion = nn.CrossEntropyLoss()
 
+        # History tracking
+        self.history = {
+            'epochs': [],
+            'train_loss': [],
+            'train_acc': [],
+            'test_acc': []
+        }
+        self.best_test_acc = 0.0
+
     def _load_encoder(self):
         """Load the encoder model from checkpoint"""
         model_type = self.config['model_type']
@@ -234,9 +243,8 @@ class LinearProbeValidator:
         print(f"Batch size: {self.batch_size}")
         print(f"Learning rate: {self.learning_rate}")
         print(f"Device: {self.device}")
+        print(f"Save directory: {os.path.dirname(self.checkpoint_path)}")
         print("=" * 80)
-
-        best_test_acc = 0.0
 
         for epoch in range(1, self.num_epochs + 1):
             print(f"\nEpoch {epoch}/{self.num_epochs}")
@@ -249,14 +257,56 @@ class LinearProbeValidator:
             test_acc = self.evaluate()
             print(f"Test Acc: {test_acc:.2f}%")
 
-            if test_acc > best_test_acc:
-                best_test_acc = test_acc
+            # Track history
+            self.history['epochs'].append(epoch)
+            self.history['train_loss'].append(train_loss)
+            self.history['train_acc'].append(train_acc)
+            self.history['test_acc'].append(test_acc)
+
+            # Track best accuracy
+            if test_acc > self.best_test_acc:
+                self.best_test_acc = test_acc
+                print(f"  → New best test accuracy: {self.best_test_acc:.2f}%")
+
+        # Save history
+        self.save_history()
 
         print("=" * 80)
-        print(f"Best Test Accuracy: {best_test_acc:.2f}%")
+        print(f"Final Test Accuracy: {test_acc:.2f}%")
+        print(f"Best Test Accuracy: {self.best_test_acc:.2f}%")
         print("=" * 80)
 
-        return best_test_acc
+        return self.best_test_acc
+
+    def save_history(self):
+        """
+        Save training history to JSON files.
+        Saves both full history and summary.
+        """
+        save_dir = os.path.dirname(self.checkpoint_path)
+
+        # Save full history
+        history_path = os.path.join(save_dir, 'linear_probe_history.json')
+        with open(history_path, 'w') as f:
+            json.dump(self.history, f, indent=4)
+        print(f"\nHistory saved to: {history_path}")
+
+        # Save summary with final metrics
+        summary = {
+            'checkpoint': os.path.basename(self.checkpoint_path),
+            'final_train_loss': self.history['train_loss'][-1] if self.history['train_loss'] else None,
+            'final_train_acc': self.history['train_acc'][-1] if self.history['train_acc'] else None,
+            'final_test_acc': self.history['test_acc'][-1] if self.history['test_acc'] else None,
+            'best_test_acc': self.best_test_acc,
+            'total_epochs': len(self.history['epochs']),
+            'learning_rate': self.learning_rate,
+            'batch_size': self.batch_size
+        }
+
+        summary_path = os.path.join(save_dir, 'linear_probe_summary.json')
+        with open(summary_path, 'w') as f:
+            json.dump(summary, f, indent=4)
+        print(f"Summary saved to: {summary_path}")
 
 
 def main():
