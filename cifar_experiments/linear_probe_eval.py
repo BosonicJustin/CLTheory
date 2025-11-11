@@ -17,7 +17,7 @@ class LinearProbe(nn.Module):
     Linear probe for evaluating learned representations.
     Freezes encoder and trains only a linear classifier.
     """
-    def __init__(self, encoder, num_classes=10):
+    def __init__(self, encoder, num_classes=10, device='cpu'):
         super().__init__()
         self.encoder = encoder
 
@@ -27,7 +27,7 @@ class LinearProbe(nn.Module):
 
         # Get encoder output dimension
         with torch.no_grad():
-            dummy_input = torch.randn(2, 3, 32, 32)
+            dummy_input = torch.randn(2, 3, 32, 32).to(device)
             encoder_output = encoder(dummy_input)
             self.feature_dim = encoder_output.shape[-1]
 
@@ -78,7 +78,7 @@ class LinearProbeValidator:
 
         # Load model
         self.encoder = self._load_encoder()
-        self.model = LinearProbe(self.encoder, num_classes=10).to(self.device)
+        self.model = LinearProbe(self.encoder, num_classes=10, device=self.device).to(self.device)
 
         print(f"Model loaded from {checkpoint_path}")
         print(f"Feature dimension: {self.model.feature_dim}")
@@ -123,17 +123,13 @@ class LinearProbeValidator:
 
     def _setup_data(self):
         """Setup CIFAR-10 train and test dataloaders"""
-        # Standard normalization for CIFAR-10
+        # Simple transform: ToTensor only (no normalization, matching SimCLR training)
         transform_train = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-                               std=[0.2023, 0.1994, 0.2010])
         ])
 
         transform_test = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-                               std=[0.2023, 0.1994, 0.2010])
         ])
 
         train_dataset = CIFAR10(
