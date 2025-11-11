@@ -21,6 +21,65 @@ class MLP(nn.Module):
         return x
 
 
+class MLPEncoder(nn.Module):
+    """
+    Multi-Layer Perceptron encoder for CIFAR-10.
+    Flattens input images and passes them through fully connected layers.
+
+    Args:
+        hidden_dim: Dimension of hidden layers (default: 2048)
+        num_hidden_layers: Number of hidden layers (default: 3)
+        output_dim: Dimension of output embeddings (default: 256)
+        dropout: Dropout probability (default: 0.1)
+        input_dim: Input dimension after flattening (default: 3072 for CIFAR-10)
+    """
+    def __init__(self, hidden_dim=2048, num_hidden_layers=3, output_dim=256, dropout=0.1, input_dim=3072):
+        super().__init__()
+        self.hidden_dim = hidden_dim
+        self.num_hidden_layers = num_hidden_layers
+        self.output_dim = output_dim
+        self.input_dim = input_dim
+
+        # Build layers
+        layers = []
+
+        # First layer: input_dim -> hidden_dim
+        layers.append(nn.Linear(input_dim, hidden_dim))
+        layers.append(nn.BatchNorm1d(hidden_dim))
+        layers.append(nn.GELU())
+        layers.append(nn.Dropout(dropout))
+
+        # Hidden layers: hidden_dim -> hidden_dim
+        for _ in range(num_hidden_layers - 1):
+            layers.append(nn.Linear(hidden_dim, hidden_dim))
+            layers.append(nn.BatchNorm1d(hidden_dim))
+            layers.append(nn.GELU())
+            layers.append(nn.Dropout(dropout))
+
+        # Output layer: hidden_dim -> output_dim (no activation)
+        layers.append(nn.Linear(hidden_dim, output_dim))
+
+        self.network = nn.Sequential(*layers)
+
+    def forward(self, x):
+        """
+        Forward pass.
+
+        Args:
+            x: Input images of shape (B, C, H, W)
+
+        Returns:
+            Embeddings of shape (B, output_dim)
+        """
+        # Flatten: (B, C, H, W) -> (B, C*H*W)
+        x = x.view(x.size(0), -1)
+
+        # Pass through network
+        x = self.network(x)
+
+        return x
+
+
 class VisionTransformerLayer(nn.Module):
     def __init__(self, embed_dim=256, hidden_dim=512, num_heads=8):
         super().__init__()

@@ -5,7 +5,7 @@ from torchvision.transforms import v2 as transforms
 from datetime import datetime
 import os
 
-from models import ViT1x1, get_resnet50_model
+from models import ViT1x1, get_resnet50_model, MLPEncoder
 from data import get_cifar10_dataloader, get_cifar10_eval_dataloaders
 from simclr import SimCLRTrainer
 from data_transforms import (
@@ -61,7 +61,7 @@ def get_model(model_type):
     Get the encoder model based on type.
 
     Args:
-        model_type: 'cnn' for ResNet50 or 'vit-1' for ViT with 1x1 patches
+        model_type: 'cnn' for ResNet50, 'vit-1' for ViT with 1x1 patches, or 'mlp' for Multi-Layer Perceptron
 
     Returns:
         encoder model
@@ -84,14 +84,24 @@ def get_model(model_type):
         )
         return model
 
+    elif model_type == 'mlp':
+        print("Initializing MLP encoder...")
+        model = MLPEncoder(
+            hidden_dim=2048,
+            num_hidden_layers=3,
+            output_dim=256,
+            dropout=0.1
+        )
+        return model
+
     else:
-        raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn' or 'vit-1'")
+        raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn', 'vit-1', or 'mlp'")
 
 
 def main():
     parser = argparse.ArgumentParser(description='SimCLR Training on CIFAR-10')
-    parser.add_argument('--model', type=str, choices=['cnn', 'vit-1'], required=True,
-                       help='Model architecture: cnn (ResNet50) or vit-1 (ViT with 1x1 patches)')
+    parser.add_argument('--model', type=str, choices=['cnn', 'vit-1', 'mlp'], required=True,
+                       help='Model architecture: cnn (ResNet50), vit-1 (ViT with 1x1 patches), or mlp (Multi-Layer Perceptron)')
     parser.add_argument('--aug-mode', type=str, choices=['all', 'crop', 'all-no-crop'], default='all',
                        help='Augmentation mode: all (all transforms permuted), crop (only crop+cutout), or all-no-crop (all except crop+cutout) (default: all)')
     parser.add_argument('--epochs', type=int, default=200,
