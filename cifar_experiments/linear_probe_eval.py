@@ -7,6 +7,8 @@ from torchvision import transforms
 from torchvision.datasets import CIFAR10
 import json
 import os
+import glob
+import re
 from tqdm import tqdm
 
 from models import ViT1x1, get_resnet50_model
@@ -309,12 +311,39 @@ class LinearProbeValidator:
         print(f"Summary saved to: {summary_path}")
 
 
+def find_latest_checkpoint(run_dir):
+    """
+    Find the latest checkpoint in the run directory.
+
+    Args:
+        run_dir: Directory containing checkpoints
+
+    Returns:
+        str: Path to latest checkpoint
+    """
+    # Find all checkpoint files
+    checkpoint_pattern = os.path.join(run_dir, 'checkpoint_epoch_*.pt')
+    checkpoints = glob.glob(checkpoint_pattern)
+
+    if not checkpoints:
+        raise FileNotFoundError(f"No checkpoints found in {run_dir}")
+
+    # Extract epoch numbers and find the latest
+    def get_epoch_num(checkpoint_path):
+        match = re.search(r'checkpoint_epoch_(\d+)\.pt', checkpoint_path)
+        return int(match.group(1)) if match else -1
+
+    latest_checkpoint = max(checkpoints, key=get_epoch_num)
+    epoch_num = get_epoch_num(latest_checkpoint)
+
+    print(f"Found latest checkpoint: checkpoint_epoch_{epoch_num}.pt")
+    return latest_checkpoint
+
+
 def main():
     parser = argparse.ArgumentParser(description='Linear Probe Evaluation for SimCLR')
-    parser.add_argument('--checkpoint', type=str, required=True,
-                       help='Path to model checkpoint (e.g., checkpoint_epoch_200.pt)')
-    parser.add_argument('--config', type=str, required=True,
-                       help='Path to config.json file')
+    parser.add_argument('--run-dir', type=str, required=True,
+                       help='Path to run directory (e.g., runs/simclr_cnn_20251111_083646)')
     parser.add_argument('--batch-size', type=int, default=256,
                        help='Batch size for evaluation (default: 256)')
     parser.add_argument('--epochs', type=int, default=100,
@@ -326,10 +355,28 @@ def main():
 
     args = parser.parse_args()
 
+    # Validate run directory exists
+    if not os.path.isdir(args.run_dir):
+        raise ValueError(f"Run directory does not exist: {args.run_dir}")
+
+    # Find config.json
+    config_path = os.path.join(args.run_dir, 'config.json')
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"config.json not found in {args.run_dir}")
+
+    # Find latest checkpoint
+    checkpoint_path = find_latest_checkpoint(args.run_dir)
+
+    print("=" * 80)
+    print(f"Run directory: {args.run_dir}")
+    print(f"Config: {os.path.basename(config_path)}")
+    print(f"Checkpoint: {os.path.basename(checkpoint_path)}")
+    print("=" * 80)
+
     # Run linear probe
     validator = LinearProbeValidator(
-        checkpoint_path=args.checkpoint,
-        config_path=args.config,
+        checkpoint_path=checkpoint_path,
+        config_path=config_path,
         device=args.device,
         batch_size=args.batch_size,
         num_epochs=args.epochs,
