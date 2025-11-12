@@ -89,7 +89,7 @@ def get_model(model_type):
         model = MLPEncoder(
             hidden_dim=2048,
             num_hidden_layers=3,
-            output_dim=256,
+            output_dim=2048,
             dropout=0.1
         )
         return model
