@@ -33,7 +33,7 @@ class MLPEncoder(nn.Module):
         dropout: Dropout probability (default: 0.1)
         input_dim: Input dimension after flattening (default: 3072 for CIFAR-10)
     """
-    def __init__(self, hidden_dim=2048, num_hidden_layers=3, output_dim=256, dropout=0.1, input_dim=3072):
+    def __init__(self, hidden_dim=2048, num_hidden_layers=3, output_dim=2048, dropout=0.1, input_dim=3072):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_hidden_layers = num_hidden_layers
