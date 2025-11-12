@@ -11,7 +11,7 @@ import glob
 import re
 from tqdm import tqdm
 
-from models import ViT1x1, get_resnet50_model
+from models import ViT1x1, get_resnet50_model, MLPEncoder
 
 
 class LinearProbe(nn.Module):
@@ -122,8 +122,15 @@ class LinearProbeValidator:
         elif model_type == 'cnn':
             encoder = get_resnet50_model()
             encoder.fc = nn.Identity()
+        elif model_type == 'mlp':
+            encoder = MLPEncoder(
+                hidden_dim=2048,
+                num_hidden_layers=3,
+                output_dim=256,
+                dropout=0.1
+            )
         else:
-            raise ValueError(f"Unknown model type: {model_type}")
+            raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn', 'vit-1', or 'mlp'")
 
         # Load checkpoint
         checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
