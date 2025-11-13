@@ -80,7 +80,7 @@ def get_model(model_type):
             embed_dim=256,
             hidden_dim=512,
             msa_heads=8,
-            num_layers=6
+            num_layers=3
         )
         return model
 

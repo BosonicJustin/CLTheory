@@ -117,7 +117,7 @@ class LinearProbeValidator:
                 embed_dim=256,
                 hidden_dim=512,
                 msa_heads=8,
-                num_layers=6
+                num_layers=3
             )
         elif model_type == 'cnn':
             encoder = get_resnet50_model()
