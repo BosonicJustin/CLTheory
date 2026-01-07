@@ -1,6 +1,5 @@
 import argparse
 import torch
-import torch.nn as nn
 from torchvision.transforms import v2 as transforms
 from datetime import datetime
 import os
