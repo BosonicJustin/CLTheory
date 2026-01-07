@@ -5,7 +5,7 @@ from torchvision.transforms import v2 as transforms
 from datetime import datetime
 import os
 
-from models import ViT1x1, get_resnet50_model, MLPEncoder
+from models import get_resnet18_encoder, get_vit_encoder, MLPEncoder, DEFAULT_EMBED_DIM
 from data import get_cifar10_dataloader, get_cifar10_eval_dataloaders
 from simclr import SimCLRTrainer
 from data_transforms import (
@@ -60,48 +60,37 @@ def get_model(model_type):
     """
     Get the encoder model based on type.
 
+    All encoders output DEFAULT_EMBED_DIM (512) dimensional embeddings for fair comparison.
+
     Args:
-        model_type: 'cnn' for ResNet50, 'vit-1' for ViT with 1x1 patches, or 'mlp' for Multi-Layer Perceptron
+        model_type: 'resnet' for ResNet18, 'vit' for ViT with 4x4 patches, or 'mlp' for MLP
 
     Returns:
         encoder model
     """
-    if model_type == 'cnn':
-        print("Initializing ResNet50 encoder...")
-        model = get_resnet50_model()
-        # Remove the classification head, keep only the feature extractor
-        model.fc = nn.Identity()
+    if model_type == 'resnet':
+        print(f"Initializing ResNet18 encoder (output_dim={DEFAULT_EMBED_DIM})...")
+        model = get_resnet18_encoder(output_dim=DEFAULT_EMBED_DIM)
         return model
 
-    elif model_type == 'vit-1':
-        print("Initializing ViT-1x1 encoder...")
-        model = ViT1x1(
-            img_size=32,
-            embed_dim=256,
-            hidden_dim=512,
-            msa_heads=8,
-            num_layers=3
-        )
+    elif model_type == 'vit':
+        print(f"Initializing ViT encoder with 4x4 patches (output_dim={DEFAULT_EMBED_DIM})...")
+        model = get_vit_encoder(output_dim=DEFAULT_EMBED_DIM)
         return model
 
     elif model_type == 'mlp':
-        print("Initializing MLP encoder...")
-        model = MLPEncoder(
-            hidden_dim=2048,
-            num_hidden_layers=3,
-            output_dim=2048,
-            dropout=0.1
-        )
+        print(f"Initializing MLP encoder (output_dim={DEFAULT_EMBED_DIM})...")
+        model = MLPEncoder(output_dim=DEFAULT_EMBED_DIM)
         return model
 
     else:
-        raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn', 'vit-1', or 'mlp'")
+        raise ValueError(f"Unknown model type: {model_type}. Choose 'resnet', 'vit', or 'mlp'")
 
 
 def main():
     parser = argparse.ArgumentParser(description='SimCLR Training on CIFAR-10')
-    parser.add_argument('--model', type=str, choices=['cnn', 'vit-1', 'mlp'], required=True,
-                       help='Model architecture: cnn (ResNet50), vit-1 (ViT with 1x1 patches), or mlp (Multi-Layer Perceptron)')
+    parser.add_argument('--model', type=str, choices=['resnet', 'vit', 'mlp'], required=True,
+                       help='Model architecture: resnet (ResNet18), vit (ViT with 4x4 patches), or mlp (MLP)')
     parser.add_argument('--aug-mode', type=str, choices=['all', 'crop', 'all-no-crop'], default='all',
                        help='Augmentation mode: all (all transforms permuted), crop (only crop+cutout), or all-no-crop (all except crop+cutout) (default: all)')
     parser.add_argument('--epochs', type=int, default=200,

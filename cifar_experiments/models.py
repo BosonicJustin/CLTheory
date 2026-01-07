@@ -1,24 +1,11 @@
 import torchvision.models as models
+from torchvision.models import VisionTransformer
 import torch
 import torch.nn as nn
 
 
-class MLP(nn.Module):
-    def __init__(self, embed_dim=256, hidden_dim=512, dropout=0.1):
-        super().__init__()
-        self.fc1 = nn.Linear(embed_dim, hidden_dim)
-        self.act = nn.GELU()
-        self.fc2 = nn.Linear(hidden_dim, embed_dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.dropout(x)
-        x = self.fc2(x)
-        x = self.dropout(x)
-
-        return x
+# Common output dimension for all encoders (for fair comparison with raw embeddings)
+DEFAULT_EMBED_DIM = 512
 
 
 class MLPEncoder(nn.Module):
@@ -26,14 +13,16 @@ class MLPEncoder(nn.Module):
     Multi-Layer Perceptron encoder for CIFAR-10.
     Flattens input images and passes them through fully connected layers.
 
+    Low inductive bias - treats image as flat vector with no spatial structure.
+
     Args:
         hidden_dim: Dimension of hidden layers (default: 2048)
         num_hidden_layers: Number of hidden layers (default: 3)
-        output_dim: Dimension of output embeddings (default: 256)
+        output_dim: Dimension of output embeddings (default: 512)
         dropout: Dropout probability (default: 0.1)
         input_dim: Input dimension after flattening (default: 3072 for CIFAR-10)
     """
-    def __init__(self, hidden_dim=2048, num_hidden_layers=3, output_dim=2048, dropout=0.1, input_dim=3072):
+    def __init__(self, hidden_dim=2048, num_hidden_layers=3, output_dim=DEFAULT_EMBED_DIM, dropout=0.1, input_dim=3072):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_hidden_layers = num_hidden_layers
@@ -80,91 +69,106 @@ class MLPEncoder(nn.Module):
         return x
 
 
-class VisionTransformerLayer(nn.Module):
-    def __init__(self, embed_dim=256, hidden_dim=512, num_heads=8):
-        super().__init__()
-        self.embed_dim = embed_dim
-        self.hidden_dim = hidden_dim
-        self.num_heads = num_heads
-
-        # MultiheadAttention handles Q, K, V projections internally
-        self.self_attention = nn.MultiheadAttention(embed_dim=self.embed_dim, num_heads=self.num_heads, batch_first=True)
-
-        self.mlp = MLP(embed_dim=self.embed_dim, hidden_dim=self.hidden_dim, dropout=0.1)
-        self.norm1 = nn.LayerNorm(self.embed_dim)
-        self.norm2 = nn.LayerNorm(self.embed_dim)
-
-    def forward(self, x):
-        # Pre-norm architecture (as in ViT paper)
-        # Self-attention block with residual
-        x_normed = self.norm1(x)
-        attn_output, _ = self.self_attention(x_normed, x_normed, x_normed, need_weights=False)
-        x = x + attn_output
-
-        # MLP block with residual
-        x = x + self.mlp(self.norm2(x))
-
-        return x
-
-
-class ViT1x1(nn.Module):
-    def __init__(self, img_size=32, embed_dim=256, hidden_dim=512, msa_heads=8, num_layers=6):
-        super().__init__()
-        self.img_size = img_size
-        self.num_patches = img_size * img_size  # Number of 1x1 patches (H*W)
-        self.embed_dim = embed_dim
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
-        self.msa_heads = msa_heads
-        self.patch_size_one = 1
-
-        # Positional embeddings for N+1 tokens (patches + CLS token)
-        self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, self.embed_dim))
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, self.embed_dim))
-        self.projection = nn.Linear(in_features=3, out_features=self.embed_dim)  # Project from C=3 channels to embed_dim
-
-        self.layers = nn.ModuleList(
-            [VisionTransformerLayer(embed_dim=self.embed_dim, hidden_dim=self.hidden_dim, num_heads=self.msa_heads) for _ in range(self.num_layers)]
-        )
-
-    
-    def project_patches(self, x):
-        # (B, C, H, W) -> (B, N, C) where N = H*W (number of 1x1 patches)
-        batch_size = x.shape[0]
-
-        # Reshape: (B, C, H, W) -> (B, C, H*W) -> (B, H*W, C)
-        x_patches = x.flatten(2).transpose(1, 2)  # (B, N, C) where N = 1024 for 32x32 image
-
-        # Project each patch from C channels to embed_dim
-        embedded_patches = self.projection(x_patches)  # (B, N, embed_dim)
-
-        # Add CLS token
-        cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # (B, 1, embed_dim)
-
-        # Concatenate CLS token with patch embeddings
-        embedded_patches = torch.cat((cls_tokens, embedded_patches), dim=1)  # (B, N+1, embed_dim)
-
-        # Add positional embeddings
-        positional_embedded_patches = embedded_patches + self.pos_embed
-
-        return positional_embedded_patches
-
-
-    def forward(self, x):
-        positional_embedded_patches = self.project_patches(x)
-
-        for layer in self.layers:
-            positional_embedded_patches = layer(positional_embedded_patches)
-
-        return positional_embedded_patches[:, 0, :]
-
-
-def get_resnet50_model():
+def get_resnet18_encoder(output_dim=DEFAULT_EMBED_DIM):
     """
-    Download (instantiate) a ResNet-50 model without pre-trained weights.
+    ResNet-18 encoder for CIFAR-10.
+
+    High inductive bias - convolutional architecture with strong spatial priors.
+
+    Args:
+        output_dim: Dimension of output embeddings (default: 512)
 
     Returns:
-        torch.nn.Module: An untrained ResNet-50 model.
+        ResNet-18 model with classification head replaced by projection.
+        Output shape: (B, output_dim)
+        Parameters: ~11.2M
     """
-    model = models.resnet50(weights=None)
+    model = models.resnet18(weights=None)
+
+    # ResNet18 has 512-dim features before fc layer
+    resnet_feat_dim = 512
+
+    if output_dim == resnet_feat_dim:
+        # No projection needed - just remove classification head
+        model.fc = nn.Identity()
+    else:
+        # Project to desired output dimension
+        model.fc = nn.Linear(resnet_feat_dim, output_dim)
+
     return model
+
+
+def get_vit_encoder(img_size=32, patch_size=4, embed_dim=384, num_layers=6, num_heads=6, mlp_dim=1536, output_dim=DEFAULT_EMBED_DIM):
+    """
+    Vision Transformer encoder for CIFAR-10 using torchvision.
+
+    Medium inductive bias - attention-based with patch structure but no convolutions.
+
+    4x4 patches on 32x32 images = 64 patches (8x8 grid)
+    ~10.7M parameters to match ResNet18 (~11.2M)
+
+    Args:
+        img_size: Input image size (32 for CIFAR-10)
+        patch_size: Patch size (4 recommended for CIFAR-10)
+        embed_dim: Transformer hidden dimension
+        num_layers: Number of transformer blocks
+        num_heads: Number of attention heads
+        mlp_dim: MLP hidden dimension in transformer blocks
+        output_dim: Dimension of output embeddings (default: 512)
+
+    Returns:
+        ViT model outputting (B, output_dim) embeddings
+        Parameters: ~10.7M
+    """
+    model = VisionTransformer(
+        image_size=img_size,
+        patch_size=patch_size,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        hidden_dim=embed_dim,
+        mlp_dim=mlp_dim,
+        num_classes=output_dim,  # This sets the head output dimension
+    )
+
+    # The heads module projects from embed_dim to num_classes (output_dim)
+    # We keep it since we want projection to common dimension
+
+    return model
+
+
+def count_parameters(model):
+    """Count trainable parameters in a model."""
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+if __name__ == "__main__":
+    # Test all encoders
+    print(f"Testing encoders on CIFAR-10 sized input (3, 32, 32)...")
+    print(f"Common output dimension: {DEFAULT_EMBED_DIM}")
+    print("=" * 60)
+
+    x = torch.randn(2, 3, 32, 32)
+
+    # Test ResNet18
+    resnet = get_resnet18_encoder()
+    out_resnet = resnet(x)
+    print(f"ResNet18:")
+    print(f"  Output shape: {out_resnet.shape}")
+    print(f"  Parameters: {count_parameters(resnet) / 1e6:.1f}M")
+
+    # Test ViT
+    vit = get_vit_encoder()
+    out_vit = vit(x)
+    print(f"\nViT (4x4 patches):")
+    print(f"  Output shape: {out_vit.shape}")
+    print(f"  Parameters: {count_parameters(vit) / 1e6:.1f}M")
+
+    # Test MLP
+    mlp = MLPEncoder()
+    out_mlp = mlp(x)
+    print(f"\nMLPEncoder:")
+    print(f"  Output shape: {out_mlp.shape}")
+    print(f"  Parameters: {count_parameters(mlp) / 1e6:.1f}M")
+
+    print("\n" + "=" * 60)
+    print("All encoders output same dimension - ready for fair comparison!")

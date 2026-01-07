@@ -11,7 +11,7 @@ import glob
 import re
 from tqdm import tqdm
 
-from models import ViT1x1, get_resnet50_model, MLPEncoder
+from models import get_resnet18_encoder, get_vit_encoder, MLPEncoder, DEFAULT_EMBED_DIM
 
 
 class LinearProbe(nn.Module):
@@ -110,27 +110,15 @@ class LinearProbeValidator:
         """Load the encoder model from checkpoint"""
         model_type = self.config['model_type']
 
-        # Create encoder
-        if model_type == 'vit-1':
-            encoder = ViT1x1(
-                img_size=32,
-                embed_dim=256,
-                hidden_dim=512,
-                msa_heads=8,
-                num_layers=3
-            )
-        elif model_type == 'cnn':
-            encoder = get_resnet50_model()
-            encoder.fc = nn.Identity()
+        # Create encoder - all output DEFAULT_EMBED_DIM (512) dimensions
+        if model_type == 'vit':
+            encoder = get_vit_encoder(output_dim=DEFAULT_EMBED_DIM)
+        elif model_type == 'resnet':
+            encoder = get_resnet18_encoder(output_dim=DEFAULT_EMBED_DIM)
         elif model_type == 'mlp':
-            encoder = MLPEncoder(
-                hidden_dim=2048,
-                num_hidden_layers=3,
-                output_dim=2048,
-                dropout=0.1
-            )
+            encoder = MLPEncoder(output_dim=DEFAULT_EMBED_DIM)
         else:
-            raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn', 'vit-1', or 'mlp'")
+            raise ValueError(f"Unknown model type: {model_type}. Choose 'resnet', 'vit', or 'mlp'")
 
         # Load checkpoint
         checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
