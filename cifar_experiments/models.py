@@ -130,8 +130,13 @@ def get_vit_encoder(img_size=32, patch_size=4, embed_dim=384, num_layers=6, num_
         num_classes=output_dim,  # This sets the head output dimension
     )
 
-    # The heads module projects from embed_dim to num_classes (output_dim)
-    # We keep it since we want projection to common dimension
+    # Fix: torchvision ViT initializes heads to zeros for custom num_classes.
+    # Reinitialize with standard truncated normal (std=0.02) for proper training.
+    for module in model.heads.modules():
+        if isinstance(module, nn.Linear):
+            nn.init.trunc_normal_(module.weight, std=0.02)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
 
     return model
 
