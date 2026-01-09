@@ -133,19 +133,19 @@ for encoder in "${ENCODERS[@]}"; do
             # Determine status
             if [ "$FINAL_CHECKPOINT_EXISTS" = true ]; then
                 echo -e "${GREEN}[COMPLETE]${NC} $EXP_NAME"
-                ((COMPLETE++))
+                COMPLETE=$((COMPLETE + 1))
             elif [ "$CONFIG_EXISTS" = true ]; then
                 if [ "$LATEST_EPOCH" -gt 0 ]; then
                     echo -e "${YELLOW}[PARTIAL]${NC}  $EXP_NAME - stopped at epoch $LATEST_EPOCH/$EPOCHS"
-                    ((PARTIAL++))
+                    PARTIAL=$((PARTIAL + 1))
                 else
                     echo -e "${YELLOW}[STARTED]${NC} $EXP_NAME - config exists but no checkpoints"
-                    ((PARTIAL++))
+                    PARTIAL=$((PARTIAL + 1))
                 fi
                 INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}")
             else
                 echo -e "${RED}[NOT STARTED]${NC} $EXP_NAME"
-                ((NOT_STARTED++))
+                NOT_STARTED=$((NOT_STARTED + 1))
                 INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}")
             fi
         done
@@ -197,7 +197,7 @@ log() {
 CURRENT=0
 for exp_info in "${INCOMPLETE_EXPS[@]}"; do
     IFS='|' read -r encoder aug_mode run <<< "$exp_info"
-    ((CURRENT++))
+    CURRENT=$((CURRENT + 1))
 
     EXP_NAME="${encoder}_${aug_mode}_run${run}"
     EXP_DIR="${RESULTS_DIR}/${encoder}/${aug_mode}/run_${run}"
