@@ -153,3 +153,47 @@ def get_cifar10_eval_dataloaders(root="./data", batch_size=256, num_workers=4, d
 
     return train_loader, test_loader
 
+
+def get_cifar10_single_dataloader(root="./data", train=True, batch_size=64,
+                                   shuffle=True, num_workers=1, download=True):
+    """
+    Create a DataLoader for CIFAR10 that returns single images (not pairs).
+
+    This is used for Adjusted InfoNCE where augmentation is applied on-the-fly
+    during training, not in the data pipeline.
+
+    Args:
+        root: Directory where the dataset will be saved.
+        train: If True, creates dataset from training set, otherwise from test set.
+        batch_size: Batch size for DataLoader
+        shuffle: Whether to shuffle the data
+        num_workers: Number of worker processes for data loading
+        download: If True, downloads the dataset if not already present.
+
+    Returns:
+        DataLoader that yields (images, labels) tuples where images is (B, 3, 32, 32)
+    """
+    # Simple transform: ToTensor only
+    # Augmentation will be applied on-the-fly in the training loop
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+
+    dataset = CIFAR10(
+        root=root,
+        train=train,
+        transform=transform,
+        download=download
+    )
+
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=True  # Drop last incomplete batch for consistent batch sizes
+    )
+
+    return dataloader
+
