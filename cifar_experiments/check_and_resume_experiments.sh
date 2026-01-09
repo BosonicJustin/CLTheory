@@ -207,6 +207,16 @@ for exp_info in "${INCOMPLETE_EXPS[@]}"; do
     log "Resuming ${CURRENT}/${TOTAL_INCOMPLETE}: ${EXP_NAME}"
     log "Output directory: ${EXP_DIR}"
 
+    # Safety check: only delete if path matches expected pattern
+    # Expected: .../experiment_results[_adjusted]/{encoder}/{aug_mode}/run_{n}
+    if [ -d "${EXP_DIR}" ]; then
+        if [[ "${EXP_DIR}" == */run_[0-9]* ]] && [[ "${EXP_DIR}" == *experiment_results* ]]; then
+            log "Removing incomplete experiment directory: ${EXP_DIR}"
+            rm -rf "${EXP_DIR}"
+        else
+            log "WARNING: Skipping deletion - path doesn't match expected pattern: ${EXP_DIR}"
+        fi
+    fi
     mkdir -p "${EXP_DIR}"
 
     EXP_START_TIME=$(date +%s)
