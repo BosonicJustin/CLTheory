@@ -153,8 +153,9 @@ def main():
         train=True,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=1,
-        download=True
+        num_workers=4,
+        download=True,
+        persistent_workers=True
     )
     print(f"Dataset loaded. Number of batches: {len(dataloader)}")
 
@@ -166,7 +167,7 @@ def main():
         val_dataloader_train, val_dataloader_test = get_cifar10_eval_dataloaders(
             root=args.data_root,
             batch_size=args.val_batch_size,
-            num_workers=1,
+            num_workers=4,
             download=True
         )
         print(f"Validation datasets loaded. Train: {len(val_dataloader_train)} batches, Test: {len(val_dataloader_test)} batches")

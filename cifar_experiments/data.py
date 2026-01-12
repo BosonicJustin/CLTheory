@@ -155,7 +155,8 @@ def get_cifar10_eval_dataloaders(root="./data", batch_size=256, num_workers=4, d
 
 
 def get_cifar10_single_dataloader(root="./data", train=True, batch_size=64,
-                                   shuffle=True, num_workers=1, download=True):
+                                   shuffle=True, num_workers=4, download=True,
+                                   persistent_workers=True):
     """
     Create a DataLoader for CIFAR10 that returns single images (not pairs).
 
@@ -169,6 +170,7 @@ def get_cifar10_single_dataloader(root="./data", train=True, batch_size=64,
         shuffle: Whether to shuffle the data
         num_workers: Number of worker processes for data loading
         download: If True, downloads the dataset if not already present.
+        persistent_workers: Keep workers alive between epochs (faster)
 
     Returns:
         DataLoader that yields (images, labels) tuples where images is (B, 3, 32, 32)
@@ -192,7 +194,8 @@ def get_cifar10_single_dataloader(root="./data", train=True, batch_size=64,
         shuffle=shuffle,
         num_workers=num_workers,
         pin_memory=True,
-        drop_last=True  # Drop last incomplete batch for consistent batch sizes
+        drop_last=True,  # Drop last incomplete batch for consistent batch sizes
+        persistent_workers=persistent_workers and num_workers > 0
     )
 
     return dataloader

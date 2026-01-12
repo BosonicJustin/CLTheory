@@ -53,7 +53,7 @@ elif [ "$EXP_TYPE" = "adjusted" ]; then
     EXPERIMENT_SCRIPT="experiments_adjusted.py"
     EPOCHS=200
     BATCH_SIZE=64
-    NUM_NEGATIVES=512
+    NUM_NEGATIVES=256
     EXTRA_ARGS="--num-negatives ${NUM_NEGATIVES}"
 else
     echo "Unknown experiment type: $EXP_TYPE"
