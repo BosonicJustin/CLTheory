@@ -71,7 +71,7 @@ class AdjustedSimCLRTrainer:
         val_dataloader_test=None,
         val_freq=10,
         use_amp=True,
-        encoder_chunk_size=256
+        encoder_chunk_size=2048
     ):
         self.model = model.to(device)
         self.augmentation_fn = augmentation_fn
