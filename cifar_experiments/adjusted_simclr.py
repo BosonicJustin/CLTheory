@@ -20,7 +20,8 @@ Optimizations:
 import torch
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast
+from torch.cuda.amp import GradScaler
 import os
 import json
 import sys
@@ -129,14 +130,14 @@ class AdjustedSimCLRTrainer:
         chunk_size = self.encoder_chunk_size
 
         if N <= chunk_size:
-            with autocast(enabled=self.use_amp):
+            with autocast('cuda', enabled=self.use_amp):
                 return self.model(images)
 
         # Process in chunks
         embeddings = []
         for i in range(0, N, chunk_size):
             chunk = images[i:i + chunk_size]
-            with autocast(enabled=self.use_amp):
+            with autocast('cuda', enabled=self.use_amp):
                 emb = self.model(chunk)
             embeddings.append(emb)
 
@@ -157,7 +158,7 @@ class AdjustedSimCLRTrainer:
             M = self.num_negatives
 
             # Anchor: encode unaugmented images
-            with autocast(enabled=self.use_amp):
+            with autocast('cuda', enabled=self.use_amp):
                 anchor = self.model(images)  # (B, D)
 
             # Generate all M+1 augmented views at once using kornia
@@ -181,7 +182,7 @@ class AdjustedSimCLRTrainer:
             negatives = augmented_embeddings[1:]  # (M, B, D)
 
             # Compute loss
-            with autocast(enabled=self.use_amp):
+            with autocast('cuda', enabled=self.use_amp):
                 loss = self.criterion(anchor, positive, negatives)
 
             # Backward pass with AMP
