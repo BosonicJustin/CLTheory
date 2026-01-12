@@ -10,11 +10,17 @@ Key differences from standard SimCLR:
 - Applies augmentation on-the-fly to generate M+1 views (1 positive + M negatives)
 - Anchor remains unaugmented
 - Uses AdjustedInfoNCELoss instead of NT-Xent
+
+Optimizations:
+- Uses kornia for GPU-parallel augmentations
+- Batches all M+1 views through encoder in chunks for efficiency
+- Supports mixed precision (AMP) training
 """
 
 import torch
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
+from torch.cuda.amp import autocast, GradScaler
 import os
 import json
 import sys
@@ -62,7 +68,9 @@ class AdjustedSimCLRTrainer:
         config=None,
         val_dataloader_train=None,
         val_dataloader_test=None,
-        val_freq=10
+        val_freq=10,
+        use_amp=True,
+        encoder_chunk_size=256
     ):
         self.model = model.to(device)
         self.augmentation_fn = augmentation_fn
@@ -72,11 +80,16 @@ class AdjustedSimCLRTrainer:
         self.save_dir = save_dir
         self.device = device
         self.config = config or {}
+        self.encoder_chunk_size = encoder_chunk_size
 
         # Validation parameters
         self.val_dataloader_train = val_dataloader_train
         self.val_dataloader_test = val_dataloader_test
         self.val_freq = val_freq
+
+        # Mixed precision training
+        self.use_amp = use_amp and device == 'cuda'
+        self.scaler = GradScaler() if self.use_amp else None
 
         # Create save directory
         os.makedirs(save_dir, exist_ok=True)
@@ -102,6 +115,33 @@ class AdjustedSimCLRTrainer:
         self.global_step = 0
         self.current_epoch = 0
 
+    def _encode_chunked(self, images):
+        """
+        Encode images through the model in chunks to manage memory.
+
+        Args:
+            images: Tensor of shape (N, C, H, W)
+
+        Returns:
+            Embeddings of shape (N, D)
+        """
+        N = images.shape[0]
+        chunk_size = self.encoder_chunk_size
+
+        if N <= chunk_size:
+            with autocast(enabled=self.use_amp):
+                return self.model(images)
+
+        # Process in chunks
+        embeddings = []
+        for i in range(0, N, chunk_size):
+            chunk = images[i:i + chunk_size]
+            with autocast(enabled=self.use_amp):
+                emb = self.model(chunk)
+            embeddings.append(emb)
+
+        return torch.cat(embeddings, dim=0)
+
     def train_epoch(self, epoch):
         """Train for one epoch using Adjusted InfoNCE loss."""
         self.model.train()
@@ -113,31 +153,46 @@ class AdjustedSimCLRTrainer:
         for batch_idx, (images, _) in enumerate(pbar):
             # Move to device - images are unaugmented (just ToTensor)
             images = images.to(self.device)
+            B = images.shape[0]
+            M = self.num_negatives
 
             # Anchor: encode unaugmented images
-            anchor = self.model(images)  # (B, D)
+            with autocast(enabled=self.use_amp):
+                anchor = self.model(images)  # (B, D)
 
-            # Generate M+1 augmented views and encode them
-            # We encode one at a time to avoid memory issues with large M
-            augmented_embeddings = []
-            for _ in range(self.num_negatives + 1):
-                # Apply stochastic augmentation
-                aug_images = self.augmentation_fn(images)  # (B, C, H, W)
-                # Encode augmented images
-                aug_emb = self.model(aug_images)  # (B, D)
-                augmented_embeddings.append(aug_emb)
+            # Generate all M+1 augmented views at once using kornia
+            # Stack original images M+1 times and augment in one batch
+            images_expanded = images.unsqueeze(0).expand(M + 1, -1, -1, -1, -1)
+            images_flat = images_expanded.reshape((M + 1) * B, *images.shape[1:])
 
-            # Stack: positive is first, rest are negatives
+            # Apply augmentation to all (M+1)*B images at once on GPU
+            with torch.no_grad():
+                augmented_flat = self.augmentation_fn(images_flat)
+
+            # Encode all augmented views in chunks
+            augmented_embeddings = self._encode_chunked(augmented_flat)  # ((M+1)*B, D)
+
+            # Reshape to (M+1, B, D)
+            D = augmented_embeddings.shape[-1]
+            augmented_embeddings = augmented_embeddings.reshape(M + 1, B, D)
+
+            # Split into positive and negatives
             positive = augmented_embeddings[0]  # (B, D)
-            negatives = torch.stack(augmented_embeddings[1:], dim=0)  # (M, B, D)
+            negatives = augmented_embeddings[1:]  # (M, B, D)
 
             # Compute loss
-            loss = self.criterion(anchor, positive, negatives)
+            with autocast(enabled=self.use_amp):
+                loss = self.criterion(anchor, positive, negatives)
 
-            # Backward pass
+            # Backward pass with AMP
             self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+            if self.use_amp:
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                loss.backward()
+                self.optimizer.step()
 
             # Logging
             total_loss += loss.item()

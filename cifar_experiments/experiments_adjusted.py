@@ -126,9 +126,9 @@ def main():
     model = get_model(args.model)
     print(f"Model initialized. Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-    # Get augmentation function (works on tensor batches)
-    augmentation_fn = get_tensor_augmentation_fn(mode=args.aug_mode)
-    print(f"Augmentation function: {args.aug_mode} mode (tensor-based)")
+    # Get augmentation function (kornia GPU-accelerated)
+    augmentation_fn = get_tensor_augmentation_fn(mode=args.aug_mode, device=device)
+    print(f"Augmentation function: {args.aug_mode} mode (kornia GPU-accelerated)")
 
     # Get dataloader (single view - unaugmented)
     print("Loading CIFAR-10 dataset...")

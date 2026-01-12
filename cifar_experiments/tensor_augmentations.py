@@ -1,8 +1,8 @@
 """
 Tensor-based augmentation functions for Adjusted InfoNCE loss.
 
-These augmentation functions work on tensor batches (B, C, H, W) using
-torchvision.transforms.v2 which supports tensor inputs.
+Uses kornia for GPU-accelerated augmentations that apply independent
+random transforms to each image in a batch (true parallel augmentation).
 
 Matches the augmentation modes from data_transforms.py:
 - 'all': All augmentations (jitter, crop, flip, gray, blur, cutout)
@@ -11,106 +11,115 @@ Matches the augmentation modes from data_transforms.py:
 """
 
 import torch
-from torchvision.transforms import v2
+import kornia.augmentation as K
 
 
-def get_tensor_augmentation_fn(mode='all'):
+def get_tensor_augmentation_fn(mode='all', device='cuda'):
     """
-    Get augmentation function that works on tensor batches.
+    Get GPU-accelerated augmentation function using kornia.
+
+    Kornia applies independent random transforms to each image in the batch,
+    running entirely on GPU for maximum speed.
 
     Args:
         mode: 'all' for all augmentations,
               'crop' for only crop and cutout,
               'all-no-crop' for all except crop and cutout
+        device: Device to run augmentations on
 
     Returns:
         Function that takes (B, C, H, W) tensor and returns augmented (B, C, H, W) tensor
     """
     if mode == 'all':
         # All augmentations - matches data_transforms.py
-        transform = v2.Compose([
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomResizedCrop(size=32, scale=(0.08, 1.0), antialias=True),
-            v2.RandomApply([v2.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.8),
-            v2.RandomGrayscale(p=0.2),
-            v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
-            v2.RandomErasing(p=1.0, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),
-        ])
+        transform = K.AugmentationSequential(
+            K.RandomHorizontalFlip(p=0.5),
+            K.RandomResizedCrop(size=(32, 32), scale=(0.08, 1.0)),
+            K.ColorJitter(brightness=0.8, contrast=0.8, saturation=0.8, hue=0.2, p=0.8),
+            K.RandomGrayscale(p=0.2),
+            K.RandomGaussianBlur(kernel_size=(3, 3), sigma=(0.1, 2.0), p=1.0),
+            K.RandomErasing(scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0.0, p=1.0),
+            same_on_batch=False,  # Independent random augmentations per image
+        ).to(device)
 
     elif mode == 'crop':
         # Only spatial augmentations (crop and cutout)
-        transform = v2.Compose([
-            v2.RandomResizedCrop(size=32, scale=(0.08, 1.0), antialias=True),
-            v2.RandomErasing(p=1.0, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),
-        ])
+        transform = K.AugmentationSequential(
+            K.RandomResizedCrop(size=(32, 32), scale=(0.08, 1.0)),
+            K.RandomErasing(scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0.0, p=1.0),
+            same_on_batch=False,
+        ).to(device)
 
     elif mode == 'all-no-crop':
         # All augmentations except crop and cutout
-        transform = v2.Compose([
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomApply([v2.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.8),
-            v2.RandomGrayscale(p=0.2),
-            v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
-        ])
+        transform = K.AugmentationSequential(
+            K.RandomHorizontalFlip(p=0.5),
+            K.ColorJitter(brightness=0.8, contrast=0.8, saturation=0.8, hue=0.2, p=0.8),
+            K.RandomGrayscale(p=0.2),
+            K.RandomGaussianBlur(kernel_size=(3, 3), sigma=(0.1, 2.0), p=1.0),
+            same_on_batch=False,
+        ).to(device)
 
     else:
         raise ValueError(f"Unknown augmentation mode: {mode}. Choose 'all', 'crop', or 'all-no-crop'")
 
     def augment(images):
         """
-        Apply stochastic augmentation to a batch of images.
+        Apply stochastic augmentation to a batch of images on GPU.
+
+        Args:
+            images: Tensor of shape (B, C, H, W) on GPU
+
+        Returns:
+            Augmented tensor of shape (B, C, H, W) on GPU
+        """
+        return transform(images)
+
+    return augment
+
+
+def get_batch_augmentation_fn(mode='all', num_augmentations=512, device='cuda'):
+    """
+    Get augmentation function that generates multiple augmented views at once.
+
+    This is optimized for Adjusted InfoNCE where we need M augmentations
+    of each image. Instead of calling augment() M times, this generates
+    all M views in a single batched operation.
+
+    Args:
+        mode: 'all', 'crop', or 'all-no-crop'
+        num_augmentations: Number of augmented views M to generate per image
+        device: Device to run augmentations on
+
+    Returns:
+        Function that takes (B, C, H, W) tensor and returns (M, B, C, H, W) tensor
+    """
+    single_augment = get_tensor_augmentation_fn(mode, device)
+
+    def augment_batch(images):
+        """
+        Generate M augmented views for each image in batch.
 
         Args:
             images: Tensor of shape (B, C, H, W)
 
         Returns:
-            Augmented tensor of shape (B, C, H, W)
+            Tensor of shape (M, B, C, H, W) with M augmented views per image
         """
-        # Apply transform to each image individually to ensure
-        # independent random augmentations per image
-        augmented = []
-        for i in range(images.shape[0]):
-            augmented.append(transform(images[i]))
-        return torch.stack(augmented)
+        B, C, H, W = images.shape
+        M = num_augmentations
 
-    return augment
+        # Expand images to (M, B, C, H, W) and reshape to (M*B, C, H, W)
+        # This way kornia processes all M*B images in parallel
+        images_expanded = images.unsqueeze(0).expand(M, -1, -1, -1, -1)
+        images_flat = images_expanded.reshape(M * B, C, H, W)
 
+        # Apply augmentation to all M*B images at once
+        augmented_flat = single_augment(images_flat)
 
-def get_tensor_augmentation_fn_batched(mode='all'):
-    """
-    Get augmentation function that applies same random transform to entire batch.
+        # Reshape back to (M, B, C, H, W)
+        augmented = augmented_flat.reshape(M, B, C, H, W)
 
-    This is faster but all images in batch get same augmentation.
-    Use get_tensor_augmentation_fn() for independent augmentations.
+        return augmented
 
-    Args:
-        mode: 'all', 'crop', or 'all-no-crop'
-
-    Returns:
-        Function that takes (B, C, H, W) tensor and returns augmented (B, C, H, W) tensor
-    """
-    if mode == 'all':
-        transform = v2.Compose([
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomResizedCrop(size=32, scale=(0.08, 1.0), antialias=True),
-            v2.RandomApply([v2.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.8),
-            v2.RandomGrayscale(p=0.2),
-            v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
-            v2.RandomErasing(p=1.0, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),
-        ])
-    elif mode == 'crop':
-        transform = v2.Compose([
-            v2.RandomResizedCrop(size=32, scale=(0.08, 1.0), antialias=True),
-            v2.RandomErasing(p=1.0, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0),
-        ])
-    elif mode == 'all-no-crop':
-        transform = v2.Compose([
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomApply([v2.ColorJitter(0.8, 0.8, 0.8, 0.2)], p=0.8),
-            v2.RandomGrayscale(p=0.2),
-            v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
-        ])
-    else:
-        raise ValueError(f"Unknown augmentation mode: {mode}")
-
-    return transform
+    return augment_batch
