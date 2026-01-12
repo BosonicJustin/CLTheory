@@ -2,6 +2,7 @@ import torchvision.models as models
 from torchvision.models import VisionTransformer
 import torch
 import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
 
 
 # Common output dimension for all encoders (for fair comparison with raw embeddings)
@@ -98,7 +99,55 @@ def get_resnet18_encoder(output_dim=DEFAULT_EMBED_DIM):
     return model
 
 
-def get_vit_encoder(img_size=32, patch_size=4, embed_dim=384, num_layers=6, num_heads=6, mlp_dim=1536, output_dim=DEFAULT_EMBED_DIM):
+class ViTWithCheckpointing(nn.Module):
+    """
+    ViT wrapper that supports gradient checkpointing for memory efficiency.
+
+    Gradient checkpointing trades compute for memory by not storing intermediate
+    activations during forward pass, recomputing them during backward pass.
+
+    This wrapper maintains state_dict compatibility with the unwrapped ViT model
+    by mapping keys appropriately in state_dict() and load_state_dict().
+    """
+    def __init__(self, vit_model, use_checkpointing=True):
+        super().__init__()
+        self.vit = vit_model
+        self.use_checkpointing = use_checkpointing
+
+    def forward(self, x):
+        # Patch embedding and position encoding (from ViT)
+        x = self.vit._process_input(x)
+        n = x.shape[0]
+
+        # Expand the class token to the full batch
+        batch_class_token = self.vit.class_token.expand(n, -1, -1)
+        x = torch.cat([batch_class_token, x], dim=1)
+
+        # Apply encoder layers with or without checkpointing
+        if self.use_checkpointing and self.training:
+            # Checkpoint each encoder layer
+            for layer in self.vit.encoder.layers:
+                x = checkpoint(layer, x, use_reentrant=False)
+            x = self.vit.encoder.ln(x)
+        else:
+            x = self.vit.encoder(x)
+
+        # Get class token and apply head
+        x = x[:, 0]
+        x = self.vit.heads(x)
+        return x
+
+    def state_dict(self, *args, **kwargs):
+        # Return state dict without 'vit.' prefix for compatibility
+        state = self.vit.state_dict(*args, **kwargs)
+        return state
+
+    def load_state_dict(self, state_dict, *args, **kwargs):
+        # Load state dict into the wrapped vit model
+        return self.vit.load_state_dict(state_dict, *args, **kwargs)
+
+
+def get_vit_encoder(img_size=32, patch_size=4, embed_dim=384, num_layers=6, num_heads=6, mlp_dim=1536, output_dim=DEFAULT_EMBED_DIM, use_checkpointing=False):
     """
     Vision Transformer encoder for CIFAR-10 using torchvision.
 
@@ -115,6 +164,7 @@ def get_vit_encoder(img_size=32, patch_size=4, embed_dim=384, num_layers=6, num_
         num_heads: Number of attention heads
         mlp_dim: MLP hidden dimension in transformer blocks
         output_dim: Dimension of output embeddings (default: 512)
+        use_checkpointing: Enable gradient checkpointing for memory efficiency
 
     Returns:
         ViT model outputting (B, output_dim) embeddings
@@ -132,6 +182,9 @@ def get_vit_encoder(img_size=32, patch_size=4, embed_dim=384, num_layers=6, num_
 
     # Remove classification head and add our own projection layer
     model.heads = nn.Linear(embed_dim, output_dim)
+
+    if use_checkpointing:
+        return ViTWithCheckpointing(model, use_checkpointing=True)
 
     return model
 

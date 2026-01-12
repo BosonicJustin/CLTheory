@@ -22,7 +22,7 @@ from adjusted_simclr import AdjustedSimCLRTrainer
 from tensor_augmentations import get_tensor_augmentation_fn
 
 
-def get_model(model_type):
+def get_model(model_type, use_checkpointing=False):
     """
     Get the encoder model based on type.
 
@@ -30,6 +30,7 @@ def get_model(model_type):
 
     Args:
         model_type: 'resnet' for ResNet18, 'vit' for ViT with 4x4 patches, or 'mlp' for MLP
+        use_checkpointing: Enable gradient checkpointing (only for ViT)
 
     Returns:
         encoder model
@@ -41,7 +42,9 @@ def get_model(model_type):
 
     elif model_type == 'vit':
         print(f"Initializing ViT encoder with 4x4 patches (output_dim={DEFAULT_EMBED_DIM})...")
-        model = get_vit_encoder(output_dim=DEFAULT_EMBED_DIM)
+        if use_checkpointing:
+            print("  Gradient checkpointing: ENABLED")
+        model = get_vit_encoder(output_dim=DEFAULT_EMBED_DIM, use_checkpointing=use_checkpointing)
         return model
 
     elif model_type == 'mlp':
@@ -85,6 +88,12 @@ def main():
                        help='Batch size for validation (default: 256)')
     parser.add_argument('--no-validation', action='store_true',
                        help='Disable validation during training')
+    parser.add_argument('--no-compile', action='store_true',
+                       help='Disable torch.compile (enabled by default)')
+    parser.add_argument('--no-amp', action='store_true',
+                       help='Disable automatic mixed precision')
+    parser.add_argument('--no-gradient-checkpointing', action='store_true',
+                       help='Disable gradient checkpointing for ViT (enabled by default)')
 
     args = parser.parse_args()
 
@@ -123,8 +132,15 @@ def main():
     print("=" * 80)
 
     # Get model
-    model = get_model(args.model)
+    use_checkpointing = not args.no_gradient_checkpointing
+    model = get_model(args.model, use_checkpointing=use_checkpointing)
     print(f"Model initialized. Total parameters: {sum(p.numel() for p in model.parameters()):,}")
+
+    # Apply torch.compile by default (PyTorch 2.0+)
+    if not args.no_compile:
+        print("Compiling model with torch.compile...")
+        model = torch.compile(model)
+        print("Model compiled successfully")
 
     # Get augmentation function (kornia GPU-accelerated)
     augmentation_fn = get_tensor_augmentation_fn(mode=args.aug_mode, device=device)
@@ -185,7 +201,8 @@ def main():
         config=config,
         val_dataloader_train=val_dataloader_train,
         val_dataloader_test=val_dataloader_test,
-        val_freq=args.val_freq
+        val_freq=args.val_freq,
+        use_amp=not args.no_amp
     )
 
     # Train
