@@ -73,14 +73,20 @@ class AdjustedSimCLRTrainer:
         use_amp=True,
         encoder_chunk_size=2048
     ):
+        self.config = config or {}
         self.model = model.to(device)
+
+        # Use channels-last memory format for ResNet (faster convolutions)
+        # Not beneficial for MLP (no convs) or ViT (attention-based)
+        if self.config.get('model_type') == 'resnet':
+            self.model = self.model.to(memory_format=torch.channels_last)
+
         self.augmentation_fn = augmentation_fn
         self.num_negatives = num_negatives
         self.temperature = temperature
         self.dataloader = dataloader
         self.save_dir = save_dir
         self.device = device
-        self.config = config or {}
         self.encoder_chunk_size = encoder_chunk_size
 
         # Validation parameters
@@ -98,11 +104,12 @@ class AdjustedSimCLRTrainer:
         # Initialize loss function
         self.criterion = AdjustedInfoNCELoss(temperature=temperature)
 
-        # Optimizer
+        # Optimizer - use Adam with foreach for speed
         self.optimizer = torch.optim.Adam(
             model.parameters(),
             lr=learning_rate,
-            weight_decay=weight_decay
+            weight_decay=weight_decay,
+            foreach=True
         )
 
         # Tensorboard writer
