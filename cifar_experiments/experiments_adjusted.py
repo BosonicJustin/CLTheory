@@ -16,6 +16,9 @@ import torch
 from datetime import datetime
 import os
 
+# Enable TensorFloat32 for faster matmul on Ampere+ GPUs
+torch.set_float32_matmul_precision('high')
+
 from models import get_resnet18_encoder, get_vit_encoder, MLPEncoder, DEFAULT_EMBED_DIM
 from data import get_cifar10_single_dataloader, get_cifar10_eval_dataloaders
 from adjusted_simclr import AdjustedSimCLRTrainer
