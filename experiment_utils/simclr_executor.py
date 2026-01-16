@@ -1,6 +1,7 @@
 from simclr.simclr import SimCLR
 from visualization_utils.scoring import plot_scores
 from visualization_utils.spheres import scatter3d_sphere, visualize_spheres_side_by_side
+from experiment_utils.linear import linear_unrotation
 import torch
 
 class SimCLRExecutor:
@@ -43,7 +44,12 @@ class SimCLRExecutor:
         z_enc = h(z).to(self.device)
 
         fig = scatter3d_sphere(plt, z.cpu(), z.cpu(), s=10, a=.8)
-        fig = scatter3d_sphere(plt, z.cpu(), h(z).cpu(), s=10, a=.8)
+        z_enc = h(z)
+        fig = scatter3d_sphere(plt, z.cpu(), z_enc.cpu(), s=10, a=.8)
+
+        # Unrotation
+        z_unrotated = linear_unrotation(z, z_enc)
+        fig = scatter3d_sphere(plt, z.cpu(), z_unrotated, s=10, a=.8)
 
         print("Orthogonal transformation loss: ", self.compute_orthogonal_transformation_loss(self.sample_pair_fixed, batch_size))
         print("Training loss: ", scores['eval_losses'][-1])
