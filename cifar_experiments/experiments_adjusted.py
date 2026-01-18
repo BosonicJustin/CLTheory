@@ -141,6 +141,24 @@ def main():
     model = get_model(args.model, use_checkpointing=use_checkpointing)
     print(f"Model initialized. Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
+    # Load checkpoint BEFORE torch.compile if resuming
+    start_epoch = 1
+    if args.resume and os.path.exists(args.resume):
+        print(f"Loading checkpoint: {args.resume}")
+        checkpoint = torch.load(args.resume, map_location=device)
+        # Handle both compiled and non-compiled state dicts
+        state_dict = checkpoint['model_state_dict']
+        # Remove _orig_mod. prefix if present (from torch.compile)
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith('_orig_mod.'):
+                new_state_dict[k[len('_orig_mod.'):]] = v
+            else:
+                new_state_dict[k] = v
+        model.load_state_dict(new_state_dict)
+        start_epoch = checkpoint['epoch'] + 1
+        print(f"Checkpoint loaded. Resuming from epoch {start_epoch}")
+
     # Apply torch.compile by default (PyTorch 2.0+)
     if not args.no_compile:
         print("Compiling model with torch.compile...")
@@ -211,15 +229,12 @@ def main():
         use_amp=not args.no_amp
     )
 
-    # Load checkpoint if resuming
-    start_epoch = 1
-    if args.resume:
-        if os.path.exists(args.resume):
-            loaded_epoch, _ = trainer.load_checkpoint(args.resume)
-            start_epoch = loaded_epoch + 1
-            print(f"Resuming training from epoch {start_epoch}")
-        else:
-            print(f"Warning: Checkpoint not found at {args.resume}, starting from scratch")
+    # Load optimizer state if resuming
+    if args.resume and os.path.exists(args.resume):
+        checkpoint = torch.load(args.resume, map_location=device)
+        trainer.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        trainer.global_step = checkpoint.get('global_step', 0)
+        print(f"Optimizer state loaded")
 
     # Train
     trainer.train(num_epochs=args.epochs, save_freq=args.save_freq, start_epoch=start_epoch)
