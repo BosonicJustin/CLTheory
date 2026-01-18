@@ -52,8 +52,8 @@ elif [ "$EXP_TYPE" = "adjusted" ]; then
     RESULTS_DIR="${SCRIPT_DIR}/experiment_results_adjusted"
     EXPERIMENT_SCRIPT="experiments_adjusted.py"
     EPOCHS=200
-    BATCH_SIZE=64
-    NUM_NEGATIVES=256
+    BATCH_SIZE=1200
+    NUM_NEGATIVES=32
     EXTRA_ARGS="--num-negatives ${NUM_NEGATIVES}"
 else
     echo "Unknown experiment type: $EXP_TYPE"
@@ -63,7 +63,7 @@ fi
 
 ENCODERS=("resnet" "vit" "mlp")
 AUG_MODES=("all" "crop" "all-no-crop")
-NUM_RUNS=5
+NUM_RUNS=1
 TEMPERATURE=0.5
 LR=3e-4
 WEIGHT_DECAY=1e-4
@@ -91,7 +91,7 @@ INCOMPLETE=0
 NOT_STARTED=0
 PARTIAL=0
 
-# Arrays to store incomplete experiments
+# Arrays to store incomplete experiments (now includes latest checkpoint info)
 declare -a INCOMPLETE_EXPS
 
 # Check each experiment
@@ -138,15 +138,17 @@ for encoder in "${ENCODERS[@]}"; do
                 if [ "$LATEST_EPOCH" -gt 0 ]; then
                     echo -e "${YELLOW}[PARTIAL]${NC}  $EXP_NAME - stopped at epoch $LATEST_EPOCH/$EPOCHS"
                     PARTIAL=$((PARTIAL + 1))
+                    # Store with checkpoint path for resuming
+                    INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}|${LATEST_CHECKPOINT}")
                 else
                     echo -e "${YELLOW}[STARTED]${NC} $EXP_NAME - config exists but no checkpoints"
                     PARTIAL=$((PARTIAL + 1))
+                    INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}|")
                 fi
-                INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}")
             else
                 echo -e "${RED}[NOT STARTED]${NC} $EXP_NAME"
                 NOT_STARTED=$((NOT_STARTED + 1))
-                INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}")
+                INCOMPLETE_EXPS+=("${encoder}|${aug_mode}|${run}|")
             fi
         done
     done
@@ -196,7 +198,7 @@ log() {
 
 CURRENT=0
 for exp_info in "${INCOMPLETE_EXPS[@]}"; do
-    IFS='|' read -r encoder aug_mode run <<< "$exp_info"
+    IFS='|' read -r encoder aug_mode run checkpoint_path <<< "$exp_info"
     CURRENT=$((CURRENT + 1))
 
     EXP_NAME="${encoder}_${aug_mode}_run${run}"
@@ -207,19 +209,19 @@ for exp_info in "${INCOMPLETE_EXPS[@]}"; do
     log "Resuming ${CURRENT}/${TOTAL_INCOMPLETE}: ${EXP_NAME}"
     log "Output directory: ${EXP_DIR}"
 
-    # Safety check: only delete if path matches expected pattern
-    # Expected: .../experiment_results[_adjusted]/{encoder}/{aug_mode}/run_{n}
-    if [ -d "${EXP_DIR}" ]; then
-        if [[ "${EXP_DIR}" == */run_[0-9]* ]] && [[ "${EXP_DIR}" == *experiment_results* ]]; then
-            log "Removing incomplete experiment directory: ${EXP_DIR}"
-            rm -rf "${EXP_DIR}"
-        else
-            log "WARNING: Skipping deletion - path doesn't match expected pattern: ${EXP_DIR}"
-        fi
-    fi
+    # Create directory if it doesn't exist (for not started experiments)
     mkdir -p "${EXP_DIR}"
 
     EXP_START_TIME=$(date +%s)
+
+    # Build the command with optional resume flag
+    RESUME_ARGS=""
+    if [ -n "$checkpoint_path" ] && [ -f "$checkpoint_path" ]; then
+        log "Resuming from checkpoint: ${checkpoint_path}"
+        RESUME_ARGS="--resume ${checkpoint_path}"
+    else
+        log "Starting fresh (no checkpoint found)"
+    fi
 
     python "${SCRIPT_DIR}/${EXPERIMENT_SCRIPT}" \
         --model "${encoder}" \
@@ -234,6 +236,7 @@ for exp_info in "${INCOMPLETE_EXPS[@]}"; do
         --save-dir "${EXP_DIR}" \
         --data-root "${SCRIPT_DIR}/data" \
         ${EXTRA_ARGS} \
+        ${RESUME_ARGS} \
         2>&1 | tee "${EXP_LOG}"
 
     EXP_END_TIME=$(date +%s)
