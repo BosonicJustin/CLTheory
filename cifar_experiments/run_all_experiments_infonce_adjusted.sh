@@ -12,10 +12,10 @@ set -e  # Exit on error
 # Configuration
 ENCODERS=("resnet" "vit" "mlp")
 AUG_MODES=("all" "crop" "all-no-crop")
-NUM_RUNS=5
+NUM_RUNS=1
 EPOCHS=200
-BATCH_SIZE=64           # Reduced from 2000 due to higher memory per sample
-NUM_NEGATIVES=512       # M negatives per image
+BATCH_SIZE=2000           # Reduced from 2000 due to higher memory per sample
+NUM_NEGATIVES=32       # M negatives per image
 TEMPERATURE=0.5
 LR=3e-4
 WEIGHT_DECAY=1e-4
