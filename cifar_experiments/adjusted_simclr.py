@@ -248,22 +248,25 @@ class AdjustedSimCLRTrainer:
         self.model.train()
         return acc
 
-    def train(self, num_epochs, save_freq=10):
+    def train(self, num_epochs, save_freq=10, start_epoch=1):
         """
         Train the model for multiple epochs.
 
         Args:
             num_epochs: Number of epochs to train
             save_freq: Save checkpoint every save_freq epochs
+            start_epoch: Epoch to start from (for resuming training)
         """
         print(f"Starting Adjusted InfoNCE training for {num_epochs} epochs")
+        if start_epoch > 1:
+            print(f"Resuming from epoch {start_epoch}")
         print(f"Save directory: {self.save_dir}")
         print(f"Temperature: {self.temperature}")
         print(f"Num negatives (M): {self.num_negatives}")
         print(f"Device: {self.device}")
         print("-" * 80)
 
-        for epoch in range(1, num_epochs + 1):
+        for epoch in range(start_epoch, num_epochs + 1):
             self.current_epoch = epoch
 
             # Train one epoch

@@ -97,6 +97,8 @@ def main():
                        help='Disable automatic mixed precision')
     parser.add_argument('--no-gradient-checkpointing', action='store_true',
                        help='Disable gradient checkpointing for ViT (enabled by default)')
+    parser.add_argument('--resume', type=str, default=None,
+                       help='Path to checkpoint to resume training from')
 
     args = parser.parse_args()
 
@@ -209,8 +211,18 @@ def main():
         use_amp=not args.no_amp
     )
 
+    # Load checkpoint if resuming
+    start_epoch = 1
+    if args.resume:
+        if os.path.exists(args.resume):
+            loaded_epoch, _ = trainer.load_checkpoint(args.resume)
+            start_epoch = loaded_epoch + 1
+            print(f"Resuming training from epoch {start_epoch}")
+        else:
+            print(f"Warning: Checkpoint not found at {args.resume}, starting from scratch")
+
     # Train
-    trainer.train(num_epochs=args.epochs, save_freq=args.save_freq)
+    trainer.train(num_epochs=args.epochs, save_freq=args.save_freq, start_epoch=start_epoch)
 
     print("Training completed successfully!")
     print(f"Results saved to: {args.save_dir}")
