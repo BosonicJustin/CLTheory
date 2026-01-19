@@ -122,7 +122,10 @@ class LinearProbeValidator:
 
         # Load checkpoint
         checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
-        encoder.load_state_dict(checkpoint['model_state_dict'])
+        # Handle torch.compile() prefix
+        state_dict = checkpoint['model_state_dict']
+        state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+        encoder.load_state_dict(state_dict)
         encoder.eval()
 
         return encoder.to(self.device)
