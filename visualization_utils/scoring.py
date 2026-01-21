@@ -49,4 +49,4 @@ def plot_scores(plt, scores):
     axes[3].grid(True)
 
     plt.tight_layout()
-    plt.show()
+    return fig

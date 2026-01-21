@@ -97,21 +97,43 @@ def visualize_spheres_side_by_side(plt, original_latents, encoded_latents, apply
     ax1.scatter(z_3d[:, 0], z_3d[:, 1], z_3d[:, 2],
                 c=colors, s=20, alpha=0.9)
     ax1.set_title('Original Latents')
-    ax1.set_xlabel('X')
-    ax1.set_ylabel('Y')
-    ax1.set_zlabel('Z')
 
     # Encoded latent space (with unrotation applied)
     ax2 = fig.add_subplot(122, projection='3d')
     ax2.scatter(encoded_data_3d[:, 0], encoded_data_3d[:, 1], encoded_data_3d[:, 2],
                 c=colors, s=20, alpha=0.9)
     ax2.set_title('Encoded Latents' + (' (unrotated)' if apply_unrotation else ''))
-    ax2.set_xlabel('X')
-    ax2.set_ylabel('Y')
-    ax2.set_zlabel('Z')
+
+    # Wireframe sphere contours
+    u, v = np.mgrid[0:2*np.pi:64j, 0:np.pi:32j]
+    r = 1.02
+    x_sphere = r * np.cos(u) * np.sin(v)
+    y_sphere = r * np.sin(u) * np.sin(v)
+    z_sphere = r * np.cos(v)
+
+    # Clean white background for both axes
+    for ax in [ax1, ax2]:
+        ax.plot_wireframe(x_sphere, y_sphere, z_sphere,
+                          color='gray', alpha=0.3, linewidth=0.5,
+                          rstride=8, cstride=8)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_zticks([])
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.xaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+        ax.grid(False)
+        ax.set_xlim((-1, 1))
+        ax.set_ylim((-1, 1))
+        ax.set_zlim((-1, 1))
+        ax.set_aspect('equal')
+        ax.view_init(10, 45)
 
     plt.tight_layout()
-    plt.show()
+    return fig
 
 
 def scatter3d_sphere(plt, z, color_source=None, s=10, a=0.8, r=1.03,
@@ -163,35 +185,22 @@ def scatter3d_sphere(plt, z, color_source=None, s=10, a=0.8, r=1.03,
 
     ax.scatter(z[:, 0], z[:, 1], z[:, 2], c=colors, s=s, alpha=a, zorder=1)
 
-    u, v = np.mgrid[-0.25*np.pi:0.75*np.pi:256j, 0:np.pi:256j]
-    ax.plot_wireframe(r * np.cos(u) * np.sin(v),
-                      r * np.sin(u) * np.sin(v),
-                      r * np.cos(v), color='gray', alpha=0.4,
-                      rstride=32, cstride=64)
-
-    # Hide everything else
-    # Hide axes ticks
+    # Clean white background - no wireframe, no grid, no axes
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
-    # # make the panes transparent
     ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-
-    # ax.set_proj_type('ortho')
-
-    plt.tight_layout()
+    ax.xaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
     ax.grid(False)
 
     ax.set_xlim((-1, 1))
     ax.set_ylim((-1, 1))
     ax.set_zlim((-1, 1))
     ax.set_aspect('equal')
-
-    ax.set_xticks([-1., 1.], minor=False)
-    ax.set_yticks([-1., 1.], minor=False)
-    ax.set_zticks([-1., 1.], minor=False)
 
     ax.view_init(10, 45)
 

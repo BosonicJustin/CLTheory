@@ -1,0 +1,19 @@
+Constraint Ratio Experiment Results (Invertible Network)
+Generated: 2025-08-16T07:34:01.829548
+Experiment timestamp: 20250815_232148
+
+COMPLETED RATIOS:
+--------------------------------------------------
+Ratio 0.0: Linear 0.286±0.092, Perm 0.247±0.060
+Ratio 0.1: Linear 0.317±0.013, Perm 0.350±0.023
+Ratio 0.2: Linear 0.350±0.058, Perm 0.453±0.071
+Ratio 0.3: Linear 0.554±0.127, Perm 0.590±0.099
+Ratio 0.4: Linear 0.666±0.127, Perm 0.617±0.111
+Ratio 0.5: Linear 0.544±0.162, Perm 0.533±0.114
+Ratio 0.6: Linear 0.564±0.184, Perm 0.600±0.131
+Ratio 0.7: Linear 0.524±0.127, Perm 0.561±0.116
+Ratio 0.8: Linear 0.485±0.017, Perm 0.516±0.032
+Ratio 0.9: Linear 0.487±0.019, Perm 0.467±0.049
+Ratio 1.0: Linear 0.597±0.008, Perm 0.569±0.048
+
+✅ EXPERIMENT COMPLETE!

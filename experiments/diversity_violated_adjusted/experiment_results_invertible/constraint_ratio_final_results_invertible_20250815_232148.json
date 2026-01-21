@@ -1,0 +1,1300 @@
+{
+  "experiment_metadata": {
+    "timestamp": "20250815_232148",
+    "device": "cuda",
+    "batch_size": 1000,
+    "iterations": 5000,
+    "temperature": 0.3,
+    "d_fix": 1,
+    "d_input": 3,
+    "d_intermediate": 3,
+    "d_output": 3,
+    "neg_samples": 1000,
+    "constraint_ratios": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "n_runs": 5,
+    "architecture": "3D sphere \u2192 Invertible MLP(3\u21923) \u2192 SphericalEncoder(3\u21923)",
+    "training_setup": "f (SphericalEncoder) reinitialized each run, g (Invertible MLP) shared across all experiments",
+    "results": [
+      {
+        "constraint_ratio": 0.0,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33289217948913574,
+          "perm_score": 0.2470747411682267,
+          "angle_error": 0.24896958470344543,
+          "final_loss": 5.025075912475586
+        },
+        "run_time_seconds": 597.9206149578094,
+        "timestamp": "2025-08-15T23:31:49.292785"
+      },
+      {
+        "constraint_ratio": 0.0,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.10198458284139633,
+          "perm_score": 0.14337534841969565,
+          "angle_error": 0.3167183995246887,
+          "final_loss": 5.024051189422607
+        },
+        "run_time_seconds": 567.1127231121063,
+        "timestamp": "2025-08-15T23:41:16.405853"
+      },
+      {
+        "constraint_ratio": 0.0,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33221983909606934,
+          "perm_score": 0.3303701124339728,
+          "angle_error": 0.2537325322628021,
+          "final_loss": 5.030699729919434
+        },
+        "run_time_seconds": 567.0981729030609,
+        "timestamp": "2025-08-15T23:50:43.504459"
+      },
+      {
+        "constraint_ratio": 0.0,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33257752656936646,
+          "perm_score": 0.25903467055447404,
+          "angle_error": 0.2508479952812195,
+          "final_loss": 5.0268449783325195
+        },
+        "run_time_seconds": 567.162257194519,
+        "timestamp": "2025-08-16T00:00:10.667132"
+      },
+      {
+        "constraint_ratio": 0.0,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33224526047706604,
+          "perm_score": 0.2545741625695767,
+          "angle_error": 0.25338393449783325,
+          "final_loss": 5.025454521179199
+        },
+        "run_time_seconds": 567.1432299613953,
+        "timestamp": "2025-08-16T00:09:37.811030"
+      },
+      {
+        "constraint_ratio": 0.1,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.30691614747047424,
+          "perm_score": 0.3709600586277341,
+          "angle_error": 0.2686845064163208,
+          "final_loss": 5.3749680519104
+        },
+        "run_time_seconds": 561.8813991546631,
+        "timestamp": "2025-08-16T00:18:59.693226"
+      },
+      {
+        "constraint_ratio": 0.1,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.295431911945343,
+          "perm_score": 0.309661204871255,
+          "angle_error": 0.2696942389011383,
+          "final_loss": 5.384583473205566
+        },
+        "run_time_seconds": 562.109094619751,
+        "timestamp": "2025-08-16T00:28:21.803060"
+      },
+      {
+        "constraint_ratio": 0.1,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.32486218214035034,
+          "perm_score": 0.34355090922194,
+          "angle_error": 0.26169493794441223,
+          "final_loss": 5.38129997253418
+        },
+        "run_time_seconds": 562.1920413970947,
+        "timestamp": "2025-08-16T00:37:43.995598"
+      },
+      {
+        "constraint_ratio": 0.1,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.3297822177410126,
+          "perm_score": 0.3562822745566128,
+          "angle_error": 0.2587921917438507,
+          "final_loss": 5.388527870178223
+        },
+        "run_time_seconds": 561.6113421916962,
+        "timestamp": "2025-08-16T00:47:05.607420"
+      },
+      {
+        "constraint_ratio": 0.1,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.32746627926826477,
+          "perm_score": 0.3708362391808027,
+          "angle_error": 0.26432186365127563,
+          "final_loss": 5.3758225440979
+        },
+        "run_time_seconds": 561.4166460037231,
+        "timestamp": "2025-08-16T00:56:27.024587"
+      },
+      {
+        "constraint_ratio": 0.2,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.37371039390563965,
+          "perm_score": 0.45319445276147413,
+          "angle_error": 0.2501145601272583,
+          "final_loss": 5.529287815093994
+        },
+        "run_time_seconds": 555.3036236763,
+        "timestamp": "2025-08-16T01:05:42.329076"
+      },
+      {
+        "constraint_ratio": 0.2,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.258441686630249,
+          "perm_score": 0.3508802710120708,
+          "angle_error": 0.2766368091106415,
+          "final_loss": 5.5383806228637695
+        },
+        "run_time_seconds": 555.6111569404602,
+        "timestamp": "2025-08-16T01:14:57.940786"
+      },
+      {
+        "constraint_ratio": 0.2,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.40751609206199646,
+          "perm_score": 0.566982419337123,
+          "angle_error": 0.24588102102279663,
+          "final_loss": 5.529831886291504
+        },
+        "run_time_seconds": 555.2412288188934,
+        "timestamp": "2025-08-16T01:24:13.182669"
+      },
+      {
+        "constraint_ratio": 0.2,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.30795183777809143,
+          "perm_score": 0.41854716384007795,
+          "angle_error": 0.268108069896698,
+          "final_loss": 5.527757167816162
+        },
+        "run_time_seconds": 555.6233837604523,
+        "timestamp": "2025-08-16T01:33:28.806618"
+      },
+      {
+        "constraint_ratio": 0.2,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.40295639634132385,
+          "perm_score": 0.47774226026299277,
+          "angle_error": 0.24199849367141724,
+          "final_loss": 5.530799865722656
+        },
+        "run_time_seconds": 555.4779679775238,
+        "timestamp": "2025-08-16T01:42:44.285194"
+      },
+      {
+        "constraint_ratio": 0.3,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.5915871262550354,
+          "perm_score": 0.6350798560535985,
+          "angle_error": 0.2033136636018753,
+          "final_loss": 5.625500679016113
+        },
+        "run_time_seconds": 549.4331741333008,
+        "timestamp": "2025-08-16T01:51:53.719403"
+      },
+      {
+        "constraint_ratio": 0.3,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.326273649930954,
+          "perm_score": 0.46711805687380775,
+          "angle_error": 0.2659951150417328,
+          "final_loss": 5.63658332824707
+        },
+        "run_time_seconds": 549.5302946567535,
+        "timestamp": "2025-08-16T02:01:03.250308"
+      },
+      {
+        "constraint_ratio": 0.3,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.5271697044372559,
+          "perm_score": 0.4762480666393795,
+          "angle_error": 0.2154088318347931,
+          "final_loss": 5.6388258934021
+        },
+        "run_time_seconds": 549.6499891281128,
+        "timestamp": "2025-08-16T02:10:12.900911"
+      },
+      {
+        "constraint_ratio": 0.3,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.6224612593650818,
+          "perm_score": 0.6648167239638793,
+          "angle_error": 0.1951257288455963,
+          "final_loss": 5.630031108856201
+        },
+        "run_time_seconds": 549.5736408233643,
+        "timestamp": "2025-08-16T02:19:22.475207"
+      },
+      {
+        "constraint_ratio": 0.3,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.7002320289611816,
+          "perm_score": 0.7049750924336567,
+          "angle_error": 0.1694338023662567,
+          "final_loss": 5.6382222175598145
+        },
+        "run_time_seconds": 549.2820241451263,
+        "timestamp": "2025-08-16T02:28:31.757906"
+      },
+      {
+        "constraint_ratio": 0.4,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7352121472358704,
+          "perm_score": 0.7005559775546928,
+          "angle_error": 0.156643807888031,
+          "final_loss": 5.709765911102295
+        },
+        "run_time_seconds": 543.0830245018005,
+        "timestamp": "2025-08-16T02:37:34.841952"
+      },
+      {
+        "constraint_ratio": 0.4,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7240297198295593,
+          "perm_score": 0.6185954249001177,
+          "angle_error": 0.1632334440946579,
+          "final_loss": 5.703641891479492
+        },
+        "run_time_seconds": 543.1278820037842,
+        "timestamp": "2025-08-16T02:46:37.970529"
+      },
+      {
+        "constraint_ratio": 0.4,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7351627945899963,
+          "perm_score": 0.6142055266526091,
+          "angle_error": 0.15723960101604462,
+          "final_loss": 5.709671974182129
+        },
+        "run_time_seconds": 543.1199080944061,
+        "timestamp": "2025-08-16T02:55:41.091155"
+      },
+      {
+        "constraint_ratio": 0.4,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.4120410978794098,
+          "perm_score": 0.4165334172173492,
+          "angle_error": 0.24013641476631165,
+          "final_loss": 5.714957237243652
+        },
+        "run_time_seconds": 543.142055273056,
+        "timestamp": "2025-08-16T03:04:44.233915"
+      },
+      {
+        "constraint_ratio": 0.4,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7223318219184875,
+          "perm_score": 0.7373465259732425,
+          "angle_error": 0.16195844113826752,
+          "final_loss": 5.70973014831543
+        },
+        "run_time_seconds": 543.6857361793518,
+        "timestamp": "2025-08-16T03:13:47.920373"
+      },
+      {
+        "constraint_ratio": 0.5,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.7501333355903625,
+          "perm_score": 0.6953444511409566,
+          "angle_error": 0.15011917054653168,
+          "final_loss": 5.7756218910217285
+        },
+        "run_time_seconds": 537.4907579421997,
+        "timestamp": "2025-08-16T03:22:45.412240"
+      },
+      {
+        "constraint_ratio": 0.5,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.4310566484928131,
+          "perm_score": 0.4706867992981035,
+          "angle_error": 0.23240798711776733,
+          "final_loss": 5.772112846374512
+        },
+        "run_time_seconds": 537.4533824920654,
+        "timestamp": "2025-08-16T03:31:42.866385"
+      },
+      {
+        "constraint_ratio": 0.5,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.734324038028717,
+          "perm_score": 0.6445630417976408,
+          "angle_error": 0.15575364232063293,
+          "final_loss": 5.775791168212891
+        },
+        "run_time_seconds": 537.4714696407318,
+        "timestamp": "2025-08-16T03:40:40.338646"
+      },
+      {
+        "constraint_ratio": 0.5,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.41174039244651794,
+          "perm_score": 0.4148096913527888,
+          "angle_error": 0.2377416491508484,
+          "final_loss": 5.77325439453125
+        },
+        "run_time_seconds": 537.5473320484161,
+        "timestamp": "2025-08-16T03:49:37.886767"
+      },
+      {
+        "constraint_ratio": 0.5,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.3925741910934448,
+          "perm_score": 0.44083152486210303,
+          "angle_error": 0.24558888375759125,
+          "final_loss": 5.783377170562744
+        },
+        "run_time_seconds": 537.3894402980804,
+        "timestamp": "2025-08-16T03:58:35.277021"
+      },
+      {
+        "constraint_ratio": 0.6,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.42006444931030273,
+          "perm_score": 0.4282030731970441,
+          "angle_error": 0.23416174948215485,
+          "final_loss": 5.833069801330566
+        },
+        "run_time_seconds": 531.2392356395721,
+        "timestamp": "2025-08-16T04:07:26.517462"
+      },
+      {
+        "constraint_ratio": 0.6,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.6828253865242004,
+          "perm_score": 0.61207967769831,
+          "angle_error": 0.1700228899717331,
+          "final_loss": 5.835491180419922
+        },
+        "run_time_seconds": 531.248302936554,
+        "timestamp": "2025-08-16T04:16:17.766601"
+      },
+      {
+        "constraint_ratio": 0.6,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.7324392795562744,
+          "perm_score": 0.7086274098506985,
+          "angle_error": 0.15283645689487457,
+          "final_loss": 5.857776641845703
+        },
+        "run_time_seconds": 531.0283703804016,
+        "timestamp": "2025-08-16T04:25:08.795799"
+      },
+      {
+        "constraint_ratio": 0.6,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.2729703485965729,
+          "perm_score": 0.4781204376887332,
+          "angle_error": 0.27116918563842773,
+          "final_loss": 5.831541061401367
+        },
+        "run_time_seconds": 531.0217711925507,
+        "timestamp": "2025-08-16T04:33:59.818427"
+      },
+      {
+        "constraint_ratio": 0.6,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.7092607617378235,
+          "perm_score": 0.77158237716041,
+          "angle_error": 0.15695427358150482,
+          "final_loss": 5.84791898727417
+        },
+        "run_time_seconds": 531.0498955249786,
+        "timestamp": "2025-08-16T04:42:50.869229"
+      },
+      {
+        "constraint_ratio": 0.7,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.678175151348114,
+          "perm_score": 0.6330812719797607,
+          "angle_error": 0.16809354722499847,
+          "final_loss": 5.88536262512207
+        },
+        "run_time_seconds": 524.8629643917084,
+        "timestamp": "2025-08-16T04:51:35.733424"
+      },
+      {
+        "constraint_ratio": 0.7,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.3925011157989502,
+          "perm_score": 0.4315537878801999,
+          "angle_error": 0.23577949404716492,
+          "final_loss": 5.8881635665893555
+        },
+        "run_time_seconds": 524.8543064594269,
+        "timestamp": "2025-08-16T05:00:20.588637"
+      },
+      {
+        "constraint_ratio": 0.7,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.4962449371814728,
+          "perm_score": 0.5729157752041679,
+          "angle_error": 0.21376651525497437,
+          "final_loss": 5.883541107177734
+        },
+        "run_time_seconds": 524.8656721115112,
+        "timestamp": "2025-08-16T05:09:05.455240"
+      },
+      {
+        "constraint_ratio": 0.7,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.38890230655670166,
+          "perm_score": 0.43381092828901396,
+          "angle_error": 0.24043989181518555,
+          "final_loss": 5.890581130981445
+        },
+        "run_time_seconds": 524.8975837230682,
+        "timestamp": "2025-08-16T05:17:50.353737"
+      },
+      {
+        "constraint_ratio": 0.7,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.6661780476570129,
+          "perm_score": 0.7318587167051516,
+          "angle_error": 0.1741422861814499,
+          "final_loss": 5.9049272537231445
+        },
+        "run_time_seconds": 524.8456978797913,
+        "timestamp": "2025-08-16T05:26:35.200425"
+      },
+      {
+        "constraint_ratio": 0.8,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.47048115730285645,
+          "perm_score": 0.48136923583741,
+          "angle_error": 0.2180289626121521,
+          "final_loss": 5.943179607391357
+        },
+        "run_time_seconds": 518.3582422733307,
+        "timestamp": "2025-08-16T05:35:13.559977"
+      },
+      {
+        "constraint_ratio": 0.8,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.4773756265640259,
+          "perm_score": 0.5405834163221198,
+          "angle_error": 0.2213468700647354,
+          "final_loss": 5.938398361206055
+        },
+        "run_time_seconds": 518.5141839981079,
+        "timestamp": "2025-08-16T05:43:52.075119"
+      },
+      {
+        "constraint_ratio": 0.8,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.5121272206306458,
+          "perm_score": 0.5654087729950659,
+          "angle_error": 0.20822320878505707,
+          "final_loss": 5.928101539611816
+        },
+        "run_time_seconds": 518.572939157486,
+        "timestamp": "2025-08-16T05:52:30.649001"
+      },
+      {
+        "constraint_ratio": 0.8,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.4694264829158783,
+          "perm_score": 0.4899155539460704,
+          "angle_error": 0.21998243033885956,
+          "final_loss": 5.941641330718994
+        },
+        "run_time_seconds": 518.5605130195618,
+        "timestamp": "2025-08-16T06:01:09.210747"
+      },
+      {
+        "constraint_ratio": 0.8,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.49693045020103455,
+          "perm_score": 0.5037562045677823,
+          "angle_error": 0.21241427958011627,
+          "final_loss": 5.938494682312012
+        },
+        "run_time_seconds": 518.502331495285,
+        "timestamp": "2025-08-16T06:09:47.714065"
+      },
+      {
+        "constraint_ratio": 0.9,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.47155675292015076,
+          "perm_score": 0.39037348319813053,
+          "angle_error": 0.2144450694322586,
+          "final_loss": 5.975982666015625
+        },
+        "run_time_seconds": 510.72537565231323,
+        "timestamp": "2025-08-16T06:18:18.441080"
+      },
+      {
+        "constraint_ratio": 0.9,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.49920129776000977,
+          "perm_score": 0.5046704838329251,
+          "angle_error": 0.20775674283504486,
+          "final_loss": 5.967881679534912
+        },
+        "run_time_seconds": 510.70821809768677,
+        "timestamp": "2025-08-16T06:26:49.150313"
+      },
+      {
+        "constraint_ratio": 0.9,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.47946134209632874,
+          "perm_score": 0.47656456166022854,
+          "angle_error": 0.21589745581150055,
+          "final_loss": 5.970502853393555
+        },
+        "run_time_seconds": 510.96583580970764,
+        "timestamp": "2025-08-16T06:35:20.117194"
+      },
+      {
+        "constraint_ratio": 0.9,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.5184933543205261,
+          "perm_score": 0.4356532888474443,
+          "angle_error": 0.20742197334766388,
+          "final_loss": 5.989090919494629
+        },
+        "run_time_seconds": 510.9085793495178,
+        "timestamp": "2025-08-16T06:43:51.026810"
+      },
+      {
+        "constraint_ratio": 0.9,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.46585187315940857,
+          "perm_score": 0.5287920435458467,
+          "angle_error": 0.21562863886356354,
+          "final_loss": 5.998082637786865
+        },
+        "run_time_seconds": 510.5619571208954,
+        "timestamp": "2025-08-16T06:52:21.589828"
+      },
+      {
+        "constraint_ratio": 1.0,
+        "run_id": 0,
+        "result": {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.6066789031028748,
+          "perm_score": 0.5472672383861829,
+          "angle_error": 0.16846522688865662,
+          "final_loss": 6.014880180358887
+        },
+        "run_time_seconds": 500.0488529205322,
+        "timestamp": "2025-08-16T07:00:41.640360"
+      },
+      {
+        "constraint_ratio": 1.0,
+        "run_id": 1,
+        "result": {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.597646176815033,
+          "perm_score": 0.5101381532514494,
+          "angle_error": 0.16463035345077515,
+          "final_loss": 6.0041608810424805
+        },
+        "run_time_seconds": 500.01043939590454,
+        "timestamp": "2025-08-16T07:09:01.652126"
+      },
+      {
+        "constraint_ratio": 1.0,
+        "run_id": 2,
+        "result": {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.5831260085105896,
+          "perm_score": 0.6217769616422104,
+          "angle_error": 0.1714293360710144,
+          "final_loss": 6.010267734527588
+        },
+        "run_time_seconds": 500.0520598888397,
+        "timestamp": "2025-08-16T07:17:21.705303"
+      },
+      {
+        "constraint_ratio": 1.0,
+        "run_id": 3,
+        "result": {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.5994651913642883,
+          "perm_score": 0.5347339706396314,
+          "angle_error": 0.1660146564245224,
+          "final_loss": 6.0143723487854
+        },
+        "run_time_seconds": 500.05992341041565,
+        "timestamp": "2025-08-16T07:25:41.766334"
+      },
+      {
+        "constraint_ratio": 1.0,
+        "run_id": 4,
+        "result": {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.596200168132782,
+          "perm_score": 0.6310033311036113,
+          "angle_error": 0.1708364337682724,
+          "final_loss": 5.999837875366211
+        },
+        "run_time_seconds": 500.0606961250305,
+        "timestamp": "2025-08-16T07:34:01.828142"
+      }
+    ]
+  },
+  "summary_statistics": [
+    {
+      "constraint_ratio": 0.0,
+      "linear_mean": 0.28638387769460677,
+      "linear_std": 0.09219997512239625,
+      "perm_mean": 0.2468858070291892,
+      "perm_std": 0.05981769919087018,
+      "angle_mean": 0.2647304892539978,
+      "angle_std": 0.0260521474288938,
+      "loss_mean": 5.0264252662658695,
+      "loss_std": 0.0023171767423695797,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33289217948913574,
+          "perm_score": 0.2470747411682267,
+          "angle_error": 0.24896958470344543,
+          "final_loss": 5.025075912475586
+        },
+        {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.10198458284139633,
+          "perm_score": 0.14337534841969565,
+          "angle_error": 0.3167183995246887,
+          "final_loss": 5.024051189422607
+        },
+        {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33221983909606934,
+          "perm_score": 0.3303701124339728,
+          "angle_error": 0.2537325322628021,
+          "final_loss": 5.030699729919434
+        },
+        {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33257752656936646,
+          "perm_score": 0.25903467055447404,
+          "angle_error": 0.2508479952812195,
+          "final_loss": 5.0268449783325195
+        },
+        {
+          "constraint_ratio": 0.0,
+          "linear_score": 0.33224526047706604,
+          "perm_score": 0.2545741625695767,
+          "angle_error": 0.25338393449783325,
+          "final_loss": 5.025454521179199
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.1,
+      "linear_mean": 0.316891747713089,
+      "linear_std": 0.013427955253802139,
+      "perm_mean": 0.35025813729166894,
+      "perm_std": 0.022721865612128356,
+      "angle_mean": 0.2646375477313995,
+      "angle_std": 0.0041200678538505595,
+      "loss_mean": 5.381040382385254,
+      "loss_std": 0.00515329771787086,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.30691614747047424,
+          "perm_score": 0.3709600586277341,
+          "angle_error": 0.2686845064163208,
+          "final_loss": 5.3749680519104
+        },
+        {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.295431911945343,
+          "perm_score": 0.309661204871255,
+          "angle_error": 0.2696942389011383,
+          "final_loss": 5.384583473205566
+        },
+        {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.32486218214035034,
+          "perm_score": 0.34355090922194,
+          "angle_error": 0.26169493794441223,
+          "final_loss": 5.38129997253418
+        },
+        {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.3297822177410126,
+          "perm_score": 0.3562822745566128,
+          "angle_error": 0.2587921917438507,
+          "final_loss": 5.388527870178223
+        },
+        {
+          "constraint_ratio": 0.1,
+          "linear_score": 0.32746627926826477,
+          "perm_score": 0.3708362391808027,
+          "angle_error": 0.26432186365127563,
+          "final_loss": 5.3758225440979
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.2,
+      "linear_mean": 0.3501152813434601,
+      "linear_std": 0.0580096022794791,
+      "perm_mean": 0.4534693134427477,
+      "perm_std": 0.07101907471269206,
+      "angle_mean": 0.25654779076576234,
+      "angle_std": 0.013446614375248453,
+      "loss_mean": 5.531211471557617,
+      "loss_std": 0.0037175818443882544,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.37371039390563965,
+          "perm_score": 0.45319445276147413,
+          "angle_error": 0.2501145601272583,
+          "final_loss": 5.529287815093994
+        },
+        {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.258441686630249,
+          "perm_score": 0.3508802710120708,
+          "angle_error": 0.2766368091106415,
+          "final_loss": 5.5383806228637695
+        },
+        {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.40751609206199646,
+          "perm_score": 0.566982419337123,
+          "angle_error": 0.24588102102279663,
+          "final_loss": 5.529831886291504
+        },
+        {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.30795183777809143,
+          "perm_score": 0.41854716384007795,
+          "angle_error": 0.268108069896698,
+          "final_loss": 5.527757167816162
+        },
+        {
+          "constraint_ratio": 0.2,
+          "linear_score": 0.40295639634132385,
+          "perm_score": 0.47774226026299277,
+          "angle_error": 0.24199849367141724,
+          "final_loss": 5.530799865722656
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.3,
+      "linear_mean": 0.5535447537899018,
+      "linear_std": 0.12653984464844556,
+      "perm_mean": 0.5896475591928644,
+      "perm_std": 0.09888160668573655,
+      "angle_mean": 0.20985542833805085,
+      "angle_std": 0.031862740914084274,
+      "loss_mean": 5.63383264541626,
+      "loss_std": 0.005208463677475594,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.5915871262550354,
+          "perm_score": 0.6350798560535985,
+          "angle_error": 0.2033136636018753,
+          "final_loss": 5.625500679016113
+        },
+        {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.326273649930954,
+          "perm_score": 0.46711805687380775,
+          "angle_error": 0.2659951150417328,
+          "final_loss": 5.63658332824707
+        },
+        {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.5271697044372559,
+          "perm_score": 0.4762480666393795,
+          "angle_error": 0.2154088318347931,
+          "final_loss": 5.6388258934021
+        },
+        {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.6224612593650818,
+          "perm_score": 0.6648167239638793,
+          "angle_error": 0.1951257288455963,
+          "final_loss": 5.630031108856201
+        },
+        {
+          "constraint_ratio": 0.3,
+          "linear_score": 0.7002320289611816,
+          "perm_score": 0.7049750924336567,
+          "angle_error": 0.1694338023662567,
+          "final_loss": 5.6382222175598145
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.4,
+      "linear_mean": 0.6657555162906647,
+      "linear_std": 0.12697193479625804,
+      "perm_mean": 0.6174473744596023,
+      "perm_std": 0.11105052206438985,
+      "angle_mean": 0.17584234178066255,
+      "angle_std": 0.03224940460402363,
+      "loss_mean": 5.7095534324646,
+      "loss_std": 0.003584350728121461,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7352121472358704,
+          "perm_score": 0.7005559775546928,
+          "angle_error": 0.156643807888031,
+          "final_loss": 5.709765911102295
+        },
+        {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7240297198295593,
+          "perm_score": 0.6185954249001177,
+          "angle_error": 0.1632334440946579,
+          "final_loss": 5.703641891479492
+        },
+        {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7351627945899963,
+          "perm_score": 0.6142055266526091,
+          "angle_error": 0.15723960101604462,
+          "final_loss": 5.709671974182129
+        },
+        {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.4120410978794098,
+          "perm_score": 0.4165334172173492,
+          "angle_error": 0.24013641476631165,
+          "final_loss": 5.714957237243652
+        },
+        {
+          "constraint_ratio": 0.4,
+          "linear_score": 0.7223318219184875,
+          "perm_score": 0.7373465259732425,
+          "angle_error": 0.16195844113826752,
+          "final_loss": 5.70973014831543
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.5,
+      "linear_mean": 0.5439657211303711,
+      "linear_std": 0.16241475650989518,
+      "perm_mean": 0.5332471016903184,
+      "perm_std": 0.11414783367568287,
+      "angle_mean": 0.2043222665786743,
+      "angle_std": 0.04220304113422427,
+      "loss_mean": 5.776031494140625,
+      "loss_std": 0.0039307143350867805,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.7501333355903625,
+          "perm_score": 0.6953444511409566,
+          "angle_error": 0.15011917054653168,
+          "final_loss": 5.7756218910217285
+        },
+        {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.4310566484928131,
+          "perm_score": 0.4706867992981035,
+          "angle_error": 0.23240798711776733,
+          "final_loss": 5.772112846374512
+        },
+        {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.734324038028717,
+          "perm_score": 0.6445630417976408,
+          "angle_error": 0.15575364232063293,
+          "final_loss": 5.775791168212891
+        },
+        {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.41174039244651794,
+          "perm_score": 0.4148096913527888,
+          "angle_error": 0.2377416491508484,
+          "final_loss": 5.77325439453125
+        },
+        {
+          "constraint_ratio": 0.5,
+          "linear_score": 0.3925741910934448,
+          "perm_score": 0.44083152486210303,
+          "angle_error": 0.24558888375759125,
+          "final_loss": 5.783377170562744
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.6,
+      "linear_mean": 0.5635120451450348,
+      "linear_std": 0.18385127822746267,
+      "perm_mean": 0.5997225951190391,
+      "perm_std": 0.13096165235439733,
+      "angle_mean": 0.19702891111373902,
+      "angle_std": 0.047252307357503624,
+      "loss_mean": 5.841159534454346,
+      "loss_std": 0.010118374413153032,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.42006444931030273,
+          "perm_score": 0.4282030731970441,
+          "angle_error": 0.23416174948215485,
+          "final_loss": 5.833069801330566
+        },
+        {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.6828253865242004,
+          "perm_score": 0.61207967769831,
+          "angle_error": 0.1700228899717331,
+          "final_loss": 5.835491180419922
+        },
+        {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.7324392795562744,
+          "perm_score": 0.7086274098506985,
+          "angle_error": 0.15283645689487457,
+          "final_loss": 5.857776641845703
+        },
+        {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.2729703485965729,
+          "perm_score": 0.4781204376887332,
+          "angle_error": 0.27116918563842773,
+          "final_loss": 5.831541061401367
+        },
+        {
+          "constraint_ratio": 0.6,
+          "linear_score": 0.7092607617378235,
+          "perm_score": 0.77158237716041,
+          "angle_error": 0.15695427358150482,
+          "final_loss": 5.84791898727417
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.7,
+      "linear_mean": 0.5244003117084504,
+      "linear_std": 0.1267260510813266,
+      "perm_mean": 0.5606440960116588,
+      "perm_std": 0.11615777632142395,
+      "angle_mean": 0.20644434690475463,
+      "angle_std": 0.03027893341589759,
+      "loss_mean": 5.89051513671875,
+      "loss_std": 0.0075951144515063705,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.678175151348114,
+          "perm_score": 0.6330812719797607,
+          "angle_error": 0.16809354722499847,
+          "final_loss": 5.88536262512207
+        },
+        {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.3925011157989502,
+          "perm_score": 0.4315537878801999,
+          "angle_error": 0.23577949404716492,
+          "final_loss": 5.8881635665893555
+        },
+        {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.4962449371814728,
+          "perm_score": 0.5729157752041679,
+          "angle_error": 0.21376651525497437,
+          "final_loss": 5.883541107177734
+        },
+        {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.38890230655670166,
+          "perm_score": 0.43381092828901396,
+          "angle_error": 0.24043989181518555,
+          "final_loss": 5.890581130981445
+        },
+        {
+          "constraint_ratio": 0.7,
+          "linear_score": 0.6661780476570129,
+          "perm_score": 0.7318587167051516,
+          "angle_error": 0.1741422861814499,
+          "final_loss": 5.9049272537231445
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.8,
+      "linear_mean": 0.4852681875228882,
+      "linear_std": 0.016669279626492263,
+      "perm_mean": 0.5162066367336896,
+      "perm_std": 0.03185892776682027,
+      "angle_mean": 0.21599915027618408,
+      "angle_std": 0.004937637675949414,
+      "loss_mean": 5.9379631042480465,
+      "loss_std": 0.005262389874341889,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.47048115730285645,
+          "perm_score": 0.48136923583741,
+          "angle_error": 0.2180289626121521,
+          "final_loss": 5.943179607391357
+        },
+        {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.4773756265640259,
+          "perm_score": 0.5405834163221198,
+          "angle_error": 0.2213468700647354,
+          "final_loss": 5.938398361206055
+        },
+        {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.5121272206306458,
+          "perm_score": 0.5654087729950659,
+          "angle_error": 0.20822320878505707,
+          "final_loss": 5.928101539611816
+        },
+        {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.4694264829158783,
+          "perm_score": 0.4899155539460704,
+          "angle_error": 0.21998243033885956,
+          "final_loss": 5.941641330718994
+        },
+        {
+          "constraint_ratio": 0.8,
+          "linear_score": 0.49693045020103455,
+          "perm_score": 0.5037562045677823,
+          "angle_error": 0.21241427958011627,
+          "final_loss": 5.938494682312012
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 0.9,
+      "linear_mean": 0.4869129240512848,
+      "linear_std": 0.019407388461645213,
+      "perm_mean": 0.4672107722169151,
+      "perm_std": 0.049361564177328565,
+      "angle_mean": 0.21222997605800628,
+      "angle_std": 0.003821901641709031,
+      "loss_mean": 5.980308151245117,
+      "loss_std": 0.011509476769517822,
+      "raw_results": [
+        {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.47155675292015076,
+          "perm_score": 0.39037348319813053,
+          "angle_error": 0.2144450694322586,
+          "final_loss": 5.975982666015625
+        },
+        {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.49920129776000977,
+          "perm_score": 0.5046704838329251,
+          "angle_error": 0.20775674283504486,
+          "final_loss": 5.967881679534912
+        },
+        {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.47946134209632874,
+          "perm_score": 0.47656456166022854,
+          "angle_error": 0.21589745581150055,
+          "final_loss": 5.970502853393555
+        },
+        {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.5184933543205261,
+          "perm_score": 0.4356532888474443,
+          "angle_error": 0.20742197334766388,
+          "final_loss": 5.989090919494629
+        },
+        {
+          "constraint_ratio": 0.9,
+          "linear_score": 0.46585187315940857,
+          "perm_score": 0.5287920435458467,
+          "angle_error": 0.21562863886356354,
+          "final_loss": 5.998082637786865
+        }
+      ]
+    },
+    {
+      "constraint_ratio": 1.0,
+      "linear_mean": 0.5966232895851136,
+      "linear_std": 0.007649754184211627,
+      "perm_mean": 0.5689839310046171,
+      "perm_std": 0.04845825039186381,
+      "angle_mean": 0.1682752013206482,
+      "angle_std": 0.0026434661568723056,
+      "loss_mean": 6.008703804016113,
+      "loss_std": 0.005864618370247545,
+      "raw_results": [
+        {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.6066789031028748,
+          "perm_score": 0.5472672383861829,
+          "angle_error": 0.16846522688865662,
+          "final_loss": 6.014880180358887
+        },
+        {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.597646176815033,
+          "perm_score": 0.5101381532514494,
+          "angle_error": 0.16463035345077515,
+          "final_loss": 6.0041608810424805
+        },
+        {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.5831260085105896,
+          "perm_score": 0.6217769616422104,
+          "angle_error": 0.1714293360710144,
+          "final_loss": 6.010267734527588
+        },
+        {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.5994651913642883,
+          "perm_score": 0.5347339706396314,
+          "angle_error": 0.1660146564245224,
+          "final_loss": 6.0143723487854
+        },
+        {
+          "constraint_ratio": 1.0,
+          "linear_score": 0.596200168132782,
+          "perm_score": 0.6310033311036113,
+          "angle_error": 0.1708364337682724,
+          "final_loss": 5.999837875366211
+        }
+      ]
+    }
+  ],
+  "best_performers": {
+    "best_linear": {
+      "ratio": 0.4,
+      "score": 0.6657555162906647,
+      "std": 0.12697193479625804
+    },
+    "best_perm": {
+      "ratio": 0.4,
+      "score": 0.6174473744596023,
+      "std": 0.11105052206438985
+    },
+    "best_angle": {
+      "ratio": 1.0,
+      "score": 0.1682752013206482,
+      "std": 0.0026434661568723056
+    },
+    "best_loss": {
+      "ratio": 0.0,
+      "score": 5.0264252662658695,
+      "std": 0.0023171767423695797
+    }
+  },
+  "total_experiment_time_minutes": 492.1742918213209
+}
