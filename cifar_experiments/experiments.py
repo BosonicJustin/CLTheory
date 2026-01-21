@@ -31,8 +31,8 @@ def get_augmentation_transform(mode='all'):
 
     Args:
         mode: 'all' for all augmentations (randomly permuted order),
-              'crop' for only crop and cutout,
-              'all-no-crop' for all augmentations except crop and cutout
+              'crop' for only crop (spatial transform only),
+              'all-no-crop' for all augmentations except crop (includes cutout)
 
     Returns:
         Transform composition
@@ -42,12 +42,12 @@ def get_augmentation_transform(mode='all'):
         return get_permuted_transforms()
 
     elif mode == 'crop':
-        # Only crop and cutout
-        return get_transforms_by_ids([CROP_ID, CUTOUT_ID])
+        # Only crop (spatial transform only)
+        return get_transforms_by_ids([CROP_ID])
 
     elif mode == 'all-no-crop':
-        # All augmentations except crop and cutout
-        excluded_ids = {CROP_ID, CUTOUT_ID}
+        # All augmentations except crop (includes cutout)
+        excluded_ids = {CROP_ID}
         ids = [id for id in IDS_TO_TRANSFORMS.keys() if id not in excluded_ids]
         return get_transforms_by_ids(ids)
 
@@ -91,7 +91,7 @@ def main():
     parser.add_argument('--model', type=str, choices=['resnet', 'vit', 'mlp'], required=True,
                        help='Model architecture: resnet (ResNet18), vit (ViT with 4x4 patches), or mlp (MLP)')
     parser.add_argument('--aug-mode', type=str, choices=['all', 'crop', 'all-no-crop'], default='all',
-                       help='Augmentation mode: all (all transforms permuted), crop (only crop+cutout), or all-no-crop (all except crop+cutout) (default: all)')
+                       help='Augmentation mode: all (all transforms permuted), crop (only crop), or all-no-crop (all except crop, includes cutout) (default: all)')
     parser.add_argument('--epochs', type=int, default=200,
                        help='Number of training epochs (default: 200)')
     parser.add_argument('--batch-size', type=int, default=2000,

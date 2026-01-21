@@ -6,8 +6,8 @@ random transforms to each image in a batch (true parallel augmentation).
 
 Matches the augmentation modes from data_transforms.py:
 - 'all': All augmentations (jitter, crop, flip, gray, blur, cutout)
-- 'crop': Only spatial augmentations (crop, cutout)
-- 'all-no-crop': All except spatial (jitter, flip, gray, blur)
+- 'crop': Only crop (spatial transform only)
+- 'all-no-crop': All except crop (jitter, flip, gray, blur, cutout)
 """
 
 import torch
@@ -43,20 +43,20 @@ def get_tensor_augmentation_fn(mode='all', device='cuda'):
         ).to(device)
 
     elif mode == 'crop':
-        # Only spatial augmentations (crop and cutout)
+        # Only crop (spatial transform only)
         transform = K.AugmentationSequential(
             K.RandomResizedCrop(size=(32, 32), scale=(0.08, 1.0)),
-            K.RandomErasing(scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0.0, p=1.0),
             same_on_batch=False,
         ).to(device)
 
     elif mode == 'all-no-crop':
-        # All augmentations except crop and cutout
+        # All augmentations except crop (includes cutout)
         transform = K.AugmentationSequential(
             K.RandomHorizontalFlip(p=0.5),
             K.ColorJitter(brightness=0.8, contrast=0.8, saturation=0.8, hue=0.2, p=0.8),
             K.RandomGrayscale(p=0.2),
             K.RandomGaussianBlur(kernel_size=(3, 3), sigma=(0.1, 2.0), p=1.0),
+            K.RandomErasing(scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0.0, p=1.0),
             same_on_batch=False,
         ).to(device)
 
